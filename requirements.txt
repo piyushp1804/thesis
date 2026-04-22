@@ -1,0 +1,23 @@
+# ── Core scientific computing ──
+numpy
+scipy
+
+# ── Optimization framework (GA, PSO, NSGA-II) ──
+pymoo
+
+# ── Plotting & visualization ──
+matplotlib
+seaborn
+
+# ── Data handling ──
+pandas
+
+# ── Testing ──
+pytest
+
+# ── Progress bars for long optimization runs ──
+tqdm
+
+# ── Notebooks (exploratory analysis) ──
+jupyter
+ipykernel
