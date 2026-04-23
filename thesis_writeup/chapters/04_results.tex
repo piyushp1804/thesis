@@ -203,20 +203,23 @@ $0.25$~in. Parameters are listed in \cref{tab:results:72bar-setup}.
   \end{tabular}
 \end{table}
 
-% TABLE 72bar RESULTS — auto-filled after Phase 7 batch runs complete.
+% TABLE 72bar RESULTS.
 \begin{table}[htbp]
   \centering
-  \caption{72-bar results — best / mean / std / percent error vs literature
-    optimum of \num{379.62}~lb.}
+  \caption{72-bar results — best / mean / std / percent error vs the
+    literature optimum of \num{379.62}~lb. $\mathrm{pop} = 100$,
+    $n_\text{gen} = 500$ for GA / PSO; $n_\text{gen} = 300$ for
+    NSGA-II. GA seed 2024 and PSO seeds 789, 2024 did not complete
+    in the batch window and are excluded.}
   \label{tab:results:72bar}
-  \sisetup{table-format=4.2}
+  \sisetup{table-format=3.2}
   \begin{tabular}{lrSSSS}
     \toprule
     Algorithm & Seeds & {Best (lb)} & {Mean (lb)} & {Std.\ (lb)} & {\% err (best)} \\
     \midrule
-    GA      & 5 & \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD} \\
-    PSO     & 5 & \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD} \\
-    NSGA-II & 3 & \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD} \\
+    GA      & 4 & 549.38 & 549.74 & 0.22 & 44.72 \\
+    PSO     & 3 & 548.87 & 548.87 & 0.00 & 44.58 \\
+    NSGA-II & 3 & 554.17 & 555.66 & 1.33 & 45.98 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -227,11 +230,16 @@ requirement than the tip-only check used in the original
 Fleury-Schmit 1980 paper. Because the tower is most flexible in
 lateral tip sway under LC1, the binding constraint in practice remains
 tip displacement, but our whole-system formulation drives the
-converged weight noticeably above the literature-cited minimum. The
-percent-error column should therefore be read as the gap between our
-formulation and the literature formulation, not as an optimiser
-shortfall — all three algorithms converge tightly to their own
-formulation's minimum with standard deviations under 5\%.
+converged weight to approximately $\num{549}$~lb — noticeably above
+the literature-cited minimum of $\num{379.62}$~lb obtained with the
+tip-only check. All three algorithms agree on this self-consistent
+minimum with cross-seed spreads of at most \num{0.24}\,\%: the
+percent-error column in \cref{tab:results:72bar} should therefore be
+read as the gap between our formulation and the literature
+formulation, not as an optimiser shortfall. Particle-swarm optimisation
+achieves zero cross-seed variance (within the 5 s.f.\ precision of
+the weight calculation), matching its very tight spread on the 25-bar
+benchmark.
 
 \begin{figure}[htbp]
   \centering
