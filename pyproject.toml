@@ -1,6 +1,9 @@
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+markers = [
+    "slow: long-running tests (Phase 1 GA/NSGA-II gate runs).",
+]
 
 [project]
 name = "thesis"

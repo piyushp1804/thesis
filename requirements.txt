@@ -1,23 +1,60 @@
-# ── Core scientific computing ──
-numpy
-scipy
+# =======================================================================
+# Thesis — dependency manifest
+# =======================================================================
+# Grouped by layer. Phase 1 core is PINNED to the versions the venv was
+# validated against on Day 1 (21 tests green, 3-bar to 1e-21 precision).
+# Phase 2-5 add-ons are unpinned until each phase's gate passes; we pin
+# them once their tests go green.
+#
+# Install:   pip install -r requirements.txt
+# =======================================================================
 
-# ── Optimization framework (GA, PSO, NSGA-II) ──
-pymoo
+# ── Core scientific computing (Phase 1 — FEM + optimizers) ──
+numpy==2.4.4
+scipy==1.17.1
 
-# ── Plotting & visualization ──
-matplotlib
-seaborn
+# ── Evolutionary optimization framework (Phase 1) ──
+pymoo==0.6.1.6
 
-# ── Data handling ──
-pandas
+# ── Plotting & visualization (Phase 1 basic + Phase 4 figures) ──
+matplotlib==3.10.8
+seaborn==0.13.2
 
-# ── Testing ──
-pytest
+# ── Data handling (Phase 1 results tables, Phase 4 figure data) ──
+pandas==3.0.2
 
-# ── Progress bars for long optimization runs ──
-tqdm
+# ── Testing (every phase) ──
+pytest==9.0.3
 
-# ── Notebooks (exploratory analysis) ──
+# ── Progress bars (Phase 1 batch runs, Phase 2 dataset gen) ──
+tqdm==4.67.3
+
+# ── Notebooks (exploratory analysis, optional) ──
 jupyter
 ipykernel
+
+# =======================================================================
+# Phase 2 — Neural Surrogate Model (add when Phase 1 gate passes)
+# =======================================================================
+# PyTorch (CPU build is fine — surrogate MLP is tiny, trains in minutes)
+# torch
+
+# =======================================================================
+# Phase 3 — Reinforcement Learning Agent (adds after Phase 2)
+# =======================================================================
+# stable-baselines3
+# gymnasium
+
+# =======================================================================
+# Phase 4 — LLM Designer + full plotting (after Phase 3)
+# =======================================================================
+# anthropic
+# python-dotenv
+
+# =======================================================================
+# Phase 5 — Streamlit + FastAPI demo (after Phase 4)
+# =======================================================================
+# streamlit
+# fastapi
+# uvicorn
+# plotly
