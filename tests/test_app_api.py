@@ -36,7 +36,8 @@ def test_benchmark_info_10bar():
 
 
 def test_benchmark_info_not_implemented():
-    r = client.get("/benchmarks/25bar")
+    # 200-bar remains the only unverified stub after Phase 7.
+    r = client.get("/benchmarks/200bar")
     assert r.status_code == 501
 
 

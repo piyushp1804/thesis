@@ -1,0 +1,17 @@
+{
+  "raw_text": "```json\n{\n  \"areas\": [0.45, 1.85, 2.65, 0.35, 0.55, 0.52, 1.45, 0.95],\n  \"reasoning\": \"Groups 3 and 7 (lower chord and vertical/diagonal members connecting loaded upper nodes to supports) carry primary compression and tension from both load cases, sized largest; group 2 (upper chord diagonals) moderately loaded; groups 1, 4, 5, 6, 8 are secondary/stabilizing members sized conservatively to avoid buckling while minimizing mass.\",\n  \"confidence\": 0.82\n}\n```",
+  "parsed": {
+    "areas": [
+      0.45,
+      1.85,
+      2.65,
+      0.35,
+      0.55,
+      0.52,
+      1.45,
+      0.95
+    ],
+    "reasoning": "Groups 3 and 7 (lower chord and vertical/diagonal members connecting loaded upper nodes to supports) carry primary compression and tension from both load cases, sized largest; group 2 (upper chord diagonals) moderately loaded; groups 1, 4, 5, 6, 8 are secondary/stabilizing members sized conservatively to avoid buckling while minimizing mass.",
+    "confidence": 0.82
+  }
+}

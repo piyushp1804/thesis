@@ -1,0 +1,25 @@
+{
+  "raw_text": "```json\n{\n  \"areas\": [1.8, 1.6, 0.6, 0.5, 1.4, 1.2, 0.5, 0.4, 1.0, 0.8, 0.4, 0.3, 0.6, 0.5, 0.3, 0.2],\n  \"reasoning\": \"Lower level vertical and diagonal members (groups 1-2, 5-6, 9-10) are sized larger as they carry accumulated gravity loads from upper stories through the primary load path to the four corner supports, while upper level and horizontal members carry progressively lighter loads.\",\n  \"confidence\": 0.75\n}\n```",
+  "parsed": {
+    "areas": [
+      1.8,
+      1.6,
+      0.6,
+      0.5,
+      1.4,
+      1.2,
+      0.5,
+      0.4,
+      1.0,
+      0.8,
+      0.4,
+      0.3,
+      0.6,
+      0.5,
+      0.3,
+      0.2
+    ],
+    "reasoning": "Lower level vertical and diagonal members (groups 1-2, 5-6, 9-10) are sized larger as they carry accumulated gravity loads from upper stories through the primary load path to the four corner supports, while upper level and horizontal members carry progressively lighter loads.",
+    "confidence": 0.75
+  }
+}

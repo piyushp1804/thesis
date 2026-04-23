@@ -14,7 +14,7 @@ import pytest
 from src.benchmarks.registry import available_benchmarks, get_benchmark
 
 
-VERIFIED = ["10bar"]  # Benchmarks with fully-encoded geometry in Phase 1.
+VERIFIED = ["10bar", "25bar", "72bar"]  # fully-encoded geometries
 
 
 def test_registry_lists_four_benchmarks():
@@ -23,7 +23,7 @@ def test_registry_lists_four_benchmarks():
 
 
 def test_unverified_benchmarks_raise_not_implemented():
-    for name in ("25bar", "72bar", "200bar"):
+    for name in ("200bar",):
         with pytest.raises(NotImplementedError):
             get_benchmark(name)
 
@@ -79,3 +79,37 @@ def test_10bar_specific_geometry():
     diag = b._bar_lengths[6:]
     np.testing.assert_allclose(ortho, 360.0)
     np.testing.assert_allclose(diag, 360.0 * np.sqrt(2.0))
+
+
+def test_25bar_specific_geometry():
+    """Quick spot-checks unique to Schmit-Miura 25-bar."""
+    b = get_benchmark("25bar")
+    assert b.n_bars == 25
+    assert b.n_design_vars == 8
+    assert b.ndim == 3
+    assert b.units == "imperial"
+    # Group sizes must match the 1+4+4+2+2+4+4+4 literature grouping.
+    assert [len(g) for g in b.group_map] == [1, 4, 4, 2, 2, 4, 4, 4]
+    # Top-chord bar (index 0) is the only 75-in bar in group 0.
+    np.testing.assert_allclose(b._bar_lengths[0], 75.0)
+    # Base is at +/- 100 in x and y; support nodes are 6..9.
+    np.testing.assert_allclose(
+        np.abs(b.nodes[6:10, :2]),
+        np.full((4, 2), 100.0),
+    )
+
+
+def test_72bar_specific_geometry():
+    """Quick spot-checks unique to Fleury-Schmit 72-bar tower."""
+    b = get_benchmark("72bar")
+    assert b.n_bars == 72
+    assert b.n_design_vars == 16
+    assert b.ndim == 3
+    assert b.units == "imperial"
+    # Four storeys of [columns(4), top_horiz(4), face_diag(8), plan_diag(2)].
+    assert [len(g) for g in b.group_map] == [4, 4, 8, 2] * 4
+    # Base nodes 16..19 at z=0, tip nodes 12..15 at z=240.
+    np.testing.assert_allclose(b.nodes[16:20, 2], 0.0)
+    np.testing.assert_allclose(b.nodes[12:16, 2], 240.0)
+    # Shortest bar type is the 60-in column between storey layers.
+    assert abs(b._bar_lengths.min() - 60.0) < 1e-6
