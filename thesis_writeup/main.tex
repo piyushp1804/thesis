@@ -1,0 +1,36 @@
+% =====================================================================
+% main.tex — M.Tech Thesis, IIT (BHU) Varanasi
+%
+% Build:  latexmk -pdf main.tex
+% Format: 12pt, A4, 1.5 line spacing, 1.5in left / 1in top-right-bottom
+% =====================================================================
+
+\documentclass[12pt,a4paper,oneside]{report}
+
+\usepackage[a4paper,top=1in,bottom=1in,left=1.5in,right=1in]{geometry}
+
+\input{preamble}
+
+\begin{document}
+
+\pagenumbering{roman}
+
+\input{frontmatter/titlepage}
+\input{frontmatter/certificate}
+\input{frontmatter/declaration}
+\input{frontmatter/abstract}
+\input{frontmatter/acknowledgements}
+\input{frontmatter/toc}
+
+\clearpage
+\pagenumbering{arabic}
+
+\input{chapters/01_introduction}
+\input{chapters/02_literature}
+\input{chapters/03_methodology}
+\input{chapters/04_results}
+\input{chapters/05_conclusion}
+
+\printbibliography[heading=bibintoc,title={References}]
+
+\end{document}

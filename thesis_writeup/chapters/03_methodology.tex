@@ -1,0 +1,74 @@
+\chapter{Methodology}
+\label{chap:methodology}
+
+% TODO (Phase 8): ~30 pages. Sections mirror the eight layers of the
+% framework as specified in docs/thesis_vision.md. Each section states
+% its input--output contract, references the corresponding source
+% module, and lists its validation gate.
+
+\section{Framework Overview}
+\label{sec:method:overview}
+% TODO: the eight-layer stack figure; end-to-end data flow; critical
+% invariants. Reference docs/thesis_vision.md \S2 and \S4.
+
+\section{Finite-Element Foundation}
+\label{sec:method:fem}
+% TODO: element derivation~\cite{logan2017fem,cook2002fem}; 2D/3D
+% dimension-agnostic formulation; partition boundary-condition method;
+% machine-precision validation on the 3-bar canonical case
+% (error \num{e-21}). Module: \texttt{src/fem/}.
+
+\section{Benchmark Truss Problems}
+\label{sec:method:benchmarks}
+% TODO: geometry, loads, material, bounds, and reference optima for
+% each of the four benchmarks. Use the tables in
+% docs/ground\_truth.md verbatim and cite the original papers.
+%
+% Sources: 10-bar \cite{sunar1991,schmit1974}, 25-bar
+% \cite{venkayya1971,schmit1976}, 72-bar \cite{erbatur2000,fleury1980},
+% 200-bar \cite{kaveh2010}.
+
+\section{Classical Optimisation Wrappers}
+\label{sec:method:optimisers}
+% TODO: pymoo Problem subclass; GA, PSO, NSGA-II default
+% hyperparameters (pop 100, n\_gen 500); penalty-based constraint
+% handling~\cite{coello2002}; seed management. Module:
+% \texttt{src/algorithms/}.
+
+\section{Neural Surrogate Model}
+\label{sec:method:surrogate}
+% TODO: MLP architecture $[256,128,64]$ with ReLU + dropout 0.1;
+% multi-head output (weight, displacement, stress, feasibility);
+% Latin-hypercube training-data generation, \num{10000} samples;
+% Adam optimiser $\mathrm{lr}=10^{-3}$~\cite{kingma2015adam};
+% $R^2 > 0.98$ weight prediction. Module: \texttt{src/ml/}.
+
+\section{Reinforcement-Learning Agent}
+\label{sec:method:rl}
+% TODO: \texttt{TrussDesignEnv} observation, action, reward;
+% PPO~\cite{schulman2017ppo} on Stable-Baselines3; surrogate-backed
+% environment for tractable training; hyperparameters. Inspired by
+% \cite{hayashi2020rl,brown2022rl,zhao2021rl,rochefort2024sogym}.
+% Module: \texttt{src/rl/}.
+
+\section{LLM Warm-Start Designer}
+\label{sec:method:llm}
+% TODO: Anthropic Claude API~\cite{anthropic-docs}; chain-of-thought
+% prompting~\cite{wei2022cot}; structured JSON output;
+% disk-cached responses to avoid re-billing; fall-back to
+% bounds-midpoint on parse failure. Precedent:
+% \cite{geng2024,makatura2024}. Module: \texttt{src/llm/}.
+
+\section{IS 800:2007 Compliance Layer}
+\label{sec:method:is800}
+% TODO: Clause 3.8 slenderness, 5.6.1 deflection, 6.2/6.3 tension,
+% 7.1 compression, 7.5 angle/compound notes. Reference the standard
+% directly~\cite{is800-2007} and the textbooks
+% \cite{subramanian2008,duggal2014} for worked-example cross-checks.
+% Module: \texttt{src/constraints/}.
+
+\section{User Interface and API}
+\label{sec:method:ui}
+% TODO: Streamlit front-end, FastAPI backend, end-to-end demo in
+% under \num{10} seconds on the 10-bar benchmark. Module:
+% \texttt{src/app/}.

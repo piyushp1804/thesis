@@ -1,0 +1,35 @@
+% preamble.tex — shared packages, math, and formatting hooks
+
+\usepackage{mathptmx}                           % Times-like serif, 12pt body
+\usepackage{setspace}
+\onehalfspacing                                 % 1.5 line spacing (IIT BHU spec)
+
+\usepackage{microtype}
+\usepackage{csquotes}
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{siunitx}
+\sisetup{group-separator={,}, group-minimum-digits=4}
+
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{caption}
+\usepackage{subcaption}
+
+\usepackage[hidelinks,colorlinks=false,bookmarks=true]{hyperref}
+\usepackage[capitalise,noabbrev]{cleveref}
+
+\usepackage[backend=biber,style=ieee,sorting=none]{biblatex}
+\addbibresource{references.bib}
+
+\newcommand{\thesistitle}{An AI-Powered Framework for Multi-Objective Steel Truss
+Optimization: Integrating Evolutionary Algorithms, Neural Surrogate Models,
+and LLM-Assisted Design}
+\newcommand{\thesisauthor}{Aryan}
+\newcommand{\thesisguide}{Dr.~Krishna Kant Pathak}
+\newcommand{\thesisdepartment}{Department of Civil Engineering}
+\newcommand{\thesisinstitute}{Indian Institute of Technology (BHU), Varanasi}
+\newcommand{\thesisyear}{2026}
