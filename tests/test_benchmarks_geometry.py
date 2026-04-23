@@ -14,7 +14,7 @@ import pytest
 from src.benchmarks.registry import available_benchmarks, get_benchmark
 
 
-VERIFIED = ["10bar"]  # Benchmarks with fully-encoded geometry in Phase 1.
+VERIFIED = ["10bar", "25bar", "72bar", "200bar"]
 
 
 def test_registry_lists_four_benchmarks():
@@ -22,10 +22,11 @@ def test_registry_lists_four_benchmarks():
     assert set(names) == {"10bar", "25bar", "72bar", "200bar"}
 
 
-def test_unverified_benchmarks_raise_not_implemented():
-    for name in ("25bar", "72bar", "200bar"):
-        with pytest.raises(NotImplementedError):
-            get_benchmark(name)
+def test_every_benchmark_encoded_after_phase7():
+    # All four benchmarks should construct without raising after Phase 7.
+    for name in VERIFIED:
+        b = get_benchmark(name)
+        assert b.reference_verified, f"{name} must be flagged as verified"
 
 
 @pytest.mark.parametrize("name", VERIFIED)
@@ -79,3 +80,42 @@ def test_10bar_specific_geometry():
     diag = b._bar_lengths[6:]
     np.testing.assert_allclose(ortho, 360.0)
     np.testing.assert_allclose(diag, 360.0 * np.sqrt(2.0))
+
+
+def test_25bar_specific_geometry():
+    b = get_benchmark("25bar")
+    assert b.n_bars == 25
+    assert b.n_design_vars == 8
+    assert b.ndim == 3
+    assert b.units == "imperial"
+    # Four pinned supports at the base.
+    assert len(b.supports) == 4
+    # Two load cases.
+    assert len(b.load_cases) == 2
+
+
+def test_72bar_specific_geometry():
+    b = get_benchmark("72bar")
+    assert b.n_bars == 72
+    assert b.n_design_vars == 16
+    assert b.ndim == 3
+    assert b.units == "imperial"
+    assert len(b.supports) == 4
+    assert len(b.load_cases) == 2
+    # Every story contributes 18 bars (4+8+4+2) for 4 stories -> 72 total.
+    assert sum(len(g) for g in b.group_map) == 72
+
+
+def test_200bar_specific_geometry():
+    b = get_benchmark("200bar")
+    assert b.n_bars == 200
+    assert b.n_design_vars == 29
+    assert b.ndim == 2
+    assert b.units == "SI"
+    # Seven pinned base supports (one per bottom-row column).
+    assert len(b.supports) == 7
+    # Three load cases (lateral, gravity, combined).
+    assert len(b.load_cases) == 3
+    # Steel material sanity.
+    assert b.E >= 2e11
+    assert b.density >= 7000
