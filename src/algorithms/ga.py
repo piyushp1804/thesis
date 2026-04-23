@@ -101,13 +101,21 @@ def _package_single(
 
     history = []
     if res.history is not None:
+        running_best = float("inf")
         for gen_idx, h in enumerate(res.history):
             pop = h.pop
+            F = pop.get("F").ravel()
+            G = pop.get("G")
+            # feasible = all constraints <= 0 (within tiny tolerance)
+            feas_mask = (G.max(axis=1) <= 1e-6) if G is not None else np.ones_like(F, dtype=bool)
+            if feas_mask.any():
+                gen_best_feasible = float(F[feas_mask].min())
+                running_best = min(running_best, gen_best_feasible)
             history.append(
                 {
                     "gen": gen_idx,
-                    "best_weight": float(pop.get("F").min()),
-                    "mean_weight": float(pop.get("F").mean()),
+                    "best_weight": running_best if np.isfinite(running_best) else float("nan"),
+                    "mean_weight": float(F.mean()),
                 }
             )
 

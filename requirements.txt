@@ -46,10 +46,10 @@ stable-baselines3==2.8.0
 gymnasium==1.2.3
 
 # =======================================================================
-# Phase 4 — LLM Designer + full plotting (after Phase 3)
+# Phase 4 — LLM Designer (active)
 # =======================================================================
-# anthropic
-# python-dotenv
+anthropic==0.96.0
+python-dotenv==1.2.2
 
 # =======================================================================
 # Phase 5 — Streamlit + FastAPI demo (after Phase 4)
