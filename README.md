@@ -6,10 +6,11 @@ This repository implements an end-to-end research stack for sizing classic
 benchmark trusses with evolutionary algorithms, an optional neural surrogate,
 a PPO agent, an LLM warm-start path, and a small Streamlit + FastAPI demo.
 
-**GitHub mirrors**
+**GitHub**
 
-- [infag1403/thesis](https://github.com/infag1403/thesis) (`origin` in the maintainer clone)
-- [piyushp1804/thesis](https://github.com/piyushp1804/thesis) (`piyush` remote in the maintainer clone)
+Canonical repo: [piyushp1804/thesis](https://github.com/piyushp1804/thesis) (remote name `piyush` in the maintainer clone).
+
+An older mirror at `infag1403/thesis` may exist from early pushes, but day-to-day development tracks `piyush` only.
 
 **Benchmark status (Phase 1)**
 
