@@ -52,9 +52,10 @@ anthropic==0.96.0
 python-dotenv==1.2.2
 
 # =======================================================================
-# Phase 5 — Streamlit + FastAPI demo (after Phase 4)
+# Phase 5 — Streamlit + FastAPI demo (active)
 # =======================================================================
-# streamlit
-# fastapi
-# uvicorn
-# plotly
+streamlit==1.56.0
+fastapi==0.136.0
+uvicorn==0.46.0
+plotly==6.7.0
+httpx==0.28.1
