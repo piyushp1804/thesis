@@ -38,7 +38,8 @@ Thumbs.db
 results/*.pkl
 results/*.npz
 results/*.pth
-results/llm_cache/*.json
 results/tb/
 figures/*.png
 figures/*.svg
+# Note: results/llm_cache/*.json IS committed so reviewers can reproduce the
+# Chapter-4 LLM warm-start numbers without an Anthropic API key.
