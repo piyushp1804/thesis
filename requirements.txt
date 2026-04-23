@@ -34,10 +34,10 @@ jupyter
 ipykernel
 
 # =======================================================================
-# Phase 2 — Neural Surrogate Model (add when Phase 1 gate passes)
+# Phase 2 — Neural Surrogate Model (active)
 # =======================================================================
 # PyTorch (CPU build is fine — surrogate MLP is tiny, trains in minutes)
-# torch
+torch==2.11.0
 
 # =======================================================================
 # Phase 3 — Reinforcement Learning Agent (adds after Phase 2)
