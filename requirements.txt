@@ -40,10 +40,10 @@ ipykernel
 torch==2.11.0
 
 # =======================================================================
-# Phase 3 — Reinforcement Learning Agent (adds after Phase 2)
+# Phase 3 — Reinforcement Learning Agent (active)
 # =======================================================================
-# stable-baselines3
-# gymnasium
+stable-baselines3==2.8.0
+gymnasium==1.2.3
 
 # =======================================================================
 # Phase 4 — LLM Designer + full plotting (after Phase 3)
