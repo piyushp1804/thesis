@@ -1,51 +1,300 @@
 \chapter{Literature Review}
 \label{chap:literature}
 
-% TODO (Phase 8): 15--20 pages, grouped by theme.
+This chapter surveys the prior art the thesis builds on, grouped into
+seven themes. The first two — classical truss optimisation and
+evolutionary metaheuristics — are the structural-engineering and
+optimisation-theory foundations on which every modern truss study
+still stands. The next three — neural surrogates, reinforcement
+learning, and LLM-assisted design — are the machine-learning
+accelerators this thesis combines. \Cref{sec:lit:is800} documents
+the Indian design code (IS~800:2007) that anchors the compliance
+layer, and \cref{sec:lit:gap} synthesises the literature into a
+one-paragraph statement of the research gap this thesis fills.
 
 \section{Classical Truss Optimisation}
 \label{sec:lit:classical}
-% TODO: Schmit \& Farshi~\cite{schmit1974}, Venkayya~\cite{venkayya1971},
-% Fleury \& Schmit~\cite{fleury1980}, Sunar \& Belegundu~\cite{sunar1991},
-% Erbatur et al.~\cite{erbatur2000}, Schmit \& Miura~\cite{schmit1976}.
+
+Truss optimisation as a formal mathematical problem dates to the
+early 1960s, when Louis Schmit argued that structural design should
+be posed as a constrained-nonlinear-programming
+problem~\cite{schmit1974}. Schmit and Farshi's 1974 paper is
+canonically credited with introducing the modern formulation: a
+vector of cross-sectional areas $\mathbf{x}$ minimising
+total weight $W(\mathbf{x}) = \sum_i \rho A_i L_i$ subject to
+per-member stress inequalities $|\sigma_i(\mathbf{x})| \le
+\sigma_{\text{allow}}$ and per-node displacement inequalities
+$|u_j(\mathbf{x})| \le u_{\text{allow}}$. Both the objective and
+constraints depend on the areas through a linear elastic
+finite-element analysis. That same paper also introduced the 10-bar
+planar truss that has since become the single most-cited benchmark
+in the field; the published optimum of \num{5060.85}~lb has been
+matched to four significant figures by dozens of subsequent studies.
+
+Venkayya's 1971 optimality-criteria method~\cite{venkayya1971}
+produced the next canonical benchmark — the 25-bar spatial truss —
+and established that gradient-based algorithms could match
+hand-computed optima on small- to medium-scale sizing problems.
+Fleury and Schmit in 1980~\cite{fleury1980} extended the approach
+to the 72-bar four-storey spatial tower, which exposed the
+sensitivity of optimisation outcomes to group-symmetry choices and
+two-load-case interactions that simpler benchmarks had hidden.
+Schmit and Miura's 1976 stress-ratio method~\cite{schmit1976} gave
+a dual-method framework for tension-dominated trusses, and Sunar
+and Belegundu's 1991 paper~\cite{sunar1991} revisited the 10-bar
+benchmark with improved numerics, producing the \num{5060.85}~lb
+value used throughout this thesis.
+
+Erbatur et al.~\cite{erbatur2000} in 2000 reported a genetic-
+algorithm comparison across the 10-, 25-, and 72-bar benchmarks and
+published discrete-area optima that are still standard reference
+points. Camp and Bichon~\cite{camp2004} in 2004 applied ant-colony
+optimisation to the 72-bar tower and reported the
+\num{380.24}~lb figure that every subsequent metaheuristic paper
+has either tried to beat or match. Kaveh and Talatahari's 2010
+large-scale study~\cite{kaveh2010} established the 200-bar planar
+truss as the stress-scalability benchmark. Bekdaş et
+al.~\cite{bekdas2015} applied flower-pollination to the 72-bar
+tower and reported a continuous optimum of \num{379.62}~lb that
+remains the most-cited continuous target.
+
+Two observations from this history are relevant to the present
+thesis. First, the benchmark set has barely changed in fifty years;
+any new method is tested against the same 10-, 25-, 72-, and
+200-bar problems, which makes cross-paper comparison possible.
+Second, published ``optima'' for the 72-bar tower are sensitive to
+the constraint-handling convention. Phase~7.5 of this thesis (see
+\cref{sec:results:72bar}) shows that the published Camp-Bichon and
+Bekdaş optima are infeasible by $22\,\%$ on stress and $62\,\%$ on
+lateral-tip displacement when the constraint is enforced rigorously
+in a modern FEM. The literature minima are reachable only with
+soft-penalty constraint handling that admits small violations. This
+distinction has methodological consequences that the thesis makes
+explicit in \cref{chap:results}.
 
 \section{Evolutionary and Swarm Metaheuristics}
 \label{sec:lit:metaheuristics}
-% TODO: Kennedy \& Eberhart~\cite{kennedy1995pso}, Deb~\cite{deb2001},
-% Deb et al.~\cite{deb2002nsga2}, Coello Coello~\cite{coello2002},
-% Blank \& Deb~\cite{blank2020pymoo}.
+
+Evolutionary computation as applied to engineering design was first
+argued for as an alternative to gradient methods on non-convex,
+non-differentiable, mixed-variable problems where classical
+calculus-based methods either fail or require heavy smoothing.
+Deb's 2001 textbook~\cite{deb2001} remains the standard reference
+for the single- and multi-objective genetic-algorithm machinery
+used in this thesis. The Simulated Binary Crossover (SBX) and
+polynomial mutation operators, with the distribution indices
+$\eta_c = 15$ and $\eta_m = 20$ used here, originate in the same
+text.
+
+Kennedy and Eberhart~\cite{kennedy1995pso} introduced Particle
+Swarm Optimisation in 1995 as a population-based search inspired by
+bird-flocking dynamics. PSO has historically been competitive with
+GA on continuous-variable sizing problems and is often the method
+of choice when gradient information is unavailable but the
+objective is smooth. This thesis uses PSO with the default pymoo
+hyperparameters and finds it notably tighter than GA in cross-seed
+variance on the 25-bar and 72-bar benchmarks (standard deviation
+below $0.1$~lb, versus GA's $0.7$~lb on the 72-bar).
+
+Multi-objective extension is provided by Deb, Pratap, Agarwal and
+Meyarivan's NSGA-II~\cite{deb2002nsga2}, published in 2002 and the
+most-cited evolutionary-algorithm paper in structural optimisation.
+NSGA-II's non-dominated sorting plus crowding-distance selection
+has become the standard against which every subsequent multi-
+objective evolutionary algorithm is measured. For the weight-
+versus-displacement Pareto front the thesis reports in
+\cref{sec:results:pareto}, NSGA-II was chosen without much
+deliberation — it is the field-standard baseline.
+
+Constraint handling in evolutionary algorithms is a sub-field in
+its own right. Coello Coello's 2002 survey~\cite{coello2002}
+catalogues the approaches: death penalty, static penalty, dynamic
+penalty, adaptive penalty, feasibility rules, and multi-objective
+constraint handling. This thesis uses the feasibility-rule approach
+implicit in pymoo's constraint handling (Blank and
+Deb~\cite{blank2020pymoo}): a feasible solution is always preferred
+over an infeasible one; between two infeasible solutions the less-
+violating one is preferred; between two feasible solutions the
+better-objective one wins. The constraint expression
+$g(\mathbf{x}) \le 0$ is chosen so that the value of $g$ at any
+infeasible point is a meaningful violation magnitude.
+
+Blank and Deb~\cite{blank2020pymoo} published pymoo in 2020 as a
+unified Python framework for multi-objective optimisation. Every
+optimiser in this thesis is a thin wrapper over pymoo's
+implementation. This was a deliberate choice: re-implementing GA,
+PSO, or NSGA-II from scratch would add thousands of lines of
+algorithmic code without contributing anything the literature
+needs. The thesis's integrative novelty is in the layer above
+pymoo, not at the algorithm-engine level.
 
 \section{Neural Surrogate Models for Structural Analysis}
 \label{sec:lit:surrogate}
-% TODO: Queipo et al.~\cite{queipo2005},
-% Forrester et al.~\cite{forrester2008},
-% Persia et al.~\cite{persia2025}, Sun et al.~\cite{sun2023},
-% Kingma \& Ba~\cite{kingma2015adam},
-% Goodfellow et al.~\cite{goodfellow2016dl}.
+
+The use of machine-learning models as cheap approximations to
+expensive physics-based simulations predates deep learning. Queipo
+et al.~\cite{queipo2005} synthesised the surrogate-based analysis
+and optimisation literature in 2005, cataloguing polynomial
+response-surfaces, radial-basis functions, Kriging, and support-
+vector regression as the then-dominant approximators. Forrester,
+Sóbester, and Keane's 2008 textbook~\cite{forrester2008}
+established Kriging (Gaussian process regression) as the surrogate
+of choice for smooth low-dimensional problems and gave the
+infill-criterion framework (expected improvement) that turned
+surrogates from one-shot approximators into sequential design-of-
+experiments drivers.
+
+The post-2015 deep-learning wave shifted surrogate modelling toward
+multi-layer perceptrons (MLPs) and, more recently, graph neural
+networks. Goodfellow, Bengio, and Courville's
+textbook~\cite{goodfellow2016dl} is the standard reference for the
+training machinery used here — Adam's stochastic-gradient
+optimiser~\cite{kingma2015adam}, ReLU activations, dropout
+regularisation, early stopping on held-out validation loss.
+
+For structural engineering specifically, Sun, Wang, and Wu's 2023
+work~\cite{sun2023} combined a deep neural network with a genetic
+algorithm for composite-structure optimisation and reported
+speedups consistent with the $50$--$150\times$ range this thesis
+targets. Persia et al.~\cite{persia2025} trained neural surrogates
+for topology-optimisation post-processing, a related but distinct
+problem.
+
+The architecture this thesis uses — a three-hidden-layer MLP of
+widths $[256, 128, 64]$ with multi-head output (weight,
+displacement, stress, feasibility logit) — is deliberately
+unglamorous. Truss-sizing problems have at most $\sim 30$ design
+variables (200-bar benchmark) and smooth outputs, so there is no
+prior reason to expect graph neural networks or transformers to
+outperform a well-regularised MLP. The design choice is justified
+post-hoc in \cref{sec:results:surrogate} by the achieved
+$R^2 > 0.98$ on held-out weight prediction.
 
 \section{Reinforcement Learning in Structural Design}
 \label{sec:lit:rl}
-% TODO: Sutton \& Barto~\cite{sutton2018rl},
-% Schulman et al.~\cite{schulman2017ppo},
-% Brown \& Mueller~\cite{brown2022rl},
-% Hayashi \& Ohsaki~\cite{hayashi2020rl},
-% Rochefort-Beaudoin et al.~\cite{rochefort2024sogym},
-% Zhao et al.~\cite{zhao2021rl}.
+
+Reinforcement learning applied to structural design is a recent
+development. Sutton and Barto's 2018 textbook~\cite{sutton2018rl}
+is the canonical theoretical reference; Schulman et al.'s 2017
+Proximal Policy Optimisation paper~\cite{schulman2017ppo} is the
+practical workhorse this thesis uses. PPO's clipped-surrogate
+objective is stable enough to train out-of-the-box on sparse-reward
+continuous-action problems, which is what truss design becomes
+once it is framed as an episodic task.
+
+Hayashi and Ohsaki's 2020 study~\cite{hayashi2020rl} is the direct
+structural-design precedent: they trained a deep Q-network to
+select members from a discrete cross-section catalogue for planar
+truss sizing. Brown and Mueller~\cite{brown2022rl} applied PPO to
+topology optimisation of 2D continuum structures in 2022.
+Rochefort-Beaudoin et al.'s 2024 open-source SOgym
+environment~\cite{rochefort2024sogym} provided the first
+standardised Gymnasium-compatible RL benchmark for structural
+optimisation. Zhao et al.~\cite{zhao2021rl} applied RL to
+topology-optimisation problems and established the coupling of an
+RL agent with a surrogate solver (our Layer~3) as a tractable
+training strategy.
+
+The thesis's RL layer uses PPO as the agent and the Layer~3
+surrogate as the environment's physics. Training RL directly
+against the FEM is computationally infeasible on a laptop —
+$\num{100000}$ timesteps $\times$ \num{50}~ms per FEM solve would
+exceed \num{80} minutes of wall-clock per benchmark. With the
+surrogate substituted for the FEM, training completes in under
+five minutes. This surrogate-in-environment pattern is, as far as
+the author can find, the closest structural-engineering analogue
+to the sim-to-real RL work common in robotics.
 
 \section{LLM-Assisted Engineering Design}
 \label{sec:lit:llm}
-% TODO: Wei et al.~\cite{wei2022cot}, Geng et al.~\cite{geng2024},
-% Makatura et al.~\cite{makatura2024},
-% Anthropic documentation~\cite{anthropic-docs}.
 
-\section{Indian Standard {IS 800:2007} Design Code}
+Large language models have entered the structural-design literature
+in the last two years. Two precedents directly motivated the
+Layer~5 (LLM warm-start) contribution of this thesis. Geng et
+al.'s 2024 paper~\cite{geng2024} combined an LLM with the
+OpenSeesPy structural-analysis package to generate analysis scripts
+from natural-language descriptions of loading scenarios; the LLM
+acts as a pre-processor that translates intent into an analysis-
+ready model. Makatura et al.~\cite{makatura2024} surveyed LLMs for
+design and manufacturing broadly, arguing that LLMs should be
+positioned as semantic co-pilots that bridge between human intent
+and formal optimisation specifications, rather than as black-box
+design generators that replace the optimisation step.
+
+This thesis follows Makatura et al.'s framing. The LLM (Anthropic
+Claude~\cite{anthropic-docs}) is asked for a single initial design
+vector that warm-starts the GA; it does not replace the GA, and its
+output is never reported as a final answer. Wei et al.'s 2022
+chain-of-thought prompting paper~\cite{wei2022cot} motivates the
+prompt structure, which asks the LLM to narrate its reasoning
+before emitting the final JSON. The reasoning text is archived
+with every cached response, both for reproducibility and because
+it occasionally surfaces a structural insight — on the 10-bar
+benchmark the LLM explicitly identifies the redundant-member set
+$\{2, 5, 6, 10\}$ and sizes them at the lower bound, matching what
+an experienced structural engineer would do.
+
+The empirical finding of \cref{sec:results:llm} — that LLM warm-
+start helps most on small or structurally-sparse benchmarks and
+provides no measurable benefit on the larger 72-bar problem — is,
+as far as the author is aware, not previously reported. It
+provides a scaling law of sorts for LLM-assisted design: the warm-
+start's value grows with the complexity of the structural insight
+the LLM can offer, not with the raw size of the optimisation
+problem.
+
+\section{Indian Standard IS~800:2007 Design Code}
 \label{sec:lit:is800}
-% TODO: IS~800:2007~\cite{is800-2007},
-% Subramanian~\cite{subramanian2008}, Duggal~\cite{duggal2014},
-% SP~6(1):1964~\cite{sp6-1-1964}.
 
-\section{Research Gap}
+The Bureau of Indian Standards' IS~800:2007~\cite{is800-2007} is
+the primary structural-steel design standard in use in India. It
+superseded the working-stress-method-based IS~800:1984 by
+introducing the limit-state-design (LSD) framework, aligning
+Indian practice with the European and American families of codes
+(Eurocode~3 and AISC~360 respectively). The thesis implements
+three groups of clauses directly:
+\begin{itemize}
+  \item \textbf{Clause~3.8} — slenderness limits
+        ($\lambda \le \num{180}$ for compression,
+        $\lambda \le \num{400}$ for tension);
+  \item \textbf{Clause~5.6.1} — deflection limits (typically span
+        divided by \num{300} for roof trusses under live load);
+  \item \textbf{Clauses~6.2 and~6.3} — tension design strength
+        (gross-section yield and net-section rupture);
+  \item \textbf{Clause~7.1} — compression design strength using the
+        four column-buckling curves ($a$, $b$, $c$, $d$) derived
+        from Perry-Robertson.
+\end{itemize}
+The standard steel-section catalogue SP~6(1):1964~\cite{sp6-1-1964}
+provides rolled-section tables (ISA angles, ISMB beams, ISMC
+channels) that the discrete-variable version of the benchmarks
+draws from. Subramanian's 2008 textbook~\cite{subramanian2008} and
+Duggal's 2014 textbook~\cite{duggal2014} provide worked examples
+that were used as cross-checks against the thesis's implementation
+of each clause.
+
+The compliance layer (\texttt{src/constraints/is800\_checks.py})
+treats each clause as a pure function taking member geometry,
+stress, and load vectors and returning a boolean pass/fail. A
+composite \texttt{full\_is800\_check} aggregates these into the
+constraint vector $g(\mathbf{x})$ that the optimiser consumes.
+
+\section{Research Gap and Thesis Positioning}
 \label{sec:lit:gap}
-% TODO: no prior published work integrates GA+PSO+NSGA-II + neural
-% surrogate + RL + LLM + IS~800 compliance in a single reproducible
-% framework. Close this gap.
+
+Classical truss-sizing optimisation is mature; evolutionary and
+swarm metaheuristics are mature; neural surrogates for structural
+analysis have been demonstrated in multiple independent studies;
+reinforcement learning for structural design has one small
+precedent (Hayashi and Ohsaki, 2020); LLM-assisted structural
+engineering has two precedents (Geng 2024, Makatura 2024). What
+does not exist in the published literature is a single,
+reproducible framework that combines all of these in one codebase,
+validated against the standard four-benchmark set, and wired
+throughout to the Indian IS~800:2007 design code. This thesis fills
+that gap. The contribution is integrative rather than algorithmic:
+the optimisers, the neural architecture, and the RL algorithm are
+all standard choices; the novelty lies in the composition, in the
+rigorous feasibility discipline applied to the 72-bar benchmark,
+and in the first published scaling observation for LLM warm-start
+on truss problems of increasing complexity.
