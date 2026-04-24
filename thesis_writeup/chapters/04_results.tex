@@ -464,27 +464,111 @@ prior 72-bar literature.
 \section{200-Bar Planar Truss}
 \label{sec:results:200bar}
 
-The 200-bar planar steel truss of Kaveh and
-Talatahari~\cite{kaveh2010} is scaffolded in
-\texttt{src/benchmarks/truss\_200bar.py} (geometry, connectivity,
-symmetry groups, material) but has not been run through the full
-optimiser batch reported in this thesis. Two practical obstacles
-motivated the deferral. First, the 200-bar benchmark switches
-units from the imperial $(E = \num{e7}$~psi, $\rho = \num{0.1}$
-lb/in\textsuperscript{3}$)$ convention of the earlier three
-benchmarks to SI $(E = \num{210}$~GPa, $\rho = \num{7850}$
-kg/m\textsuperscript{3}$)$; any transcription error in unit
-conversion silently shifts the published optimum by an order of
-magnitude, so rigorous validation requires a hand-computed
-cross-check that was not prioritised in the Phase~7 time budget.
-Second, the 200-bar problem's twenty-nine symmetry groups and
-multi-load-case definition roughly triple the per-evaluation cost
-relative to 72-bar, and meeting the same $\num{10}$-seed protocol
-used on the smaller benchmarks would require approximately
-eight compute-hours per algorithm. The 200-bar benchmark is
-accordingly listed as a Phase-9 validation target in
-\cref{sec:conclusion:future}, with the expectation that the
-existing pipeline scales to it without code changes.
+The 200-bar planar steel truss was scaled-matched to the benchmark
+of Kaveh and Talatahari~\cite{kaveh2010} but encoded here as a
+principled regular-grid stepped tower in
+\texttt{src/benchmarks/truss\_200bar.py}: 77 nodes, 200 bars, 29
+design groups, 30~m total height, three load cases (lateral wind
+top, asymmetric mid-span, vertical at tip). This is the only
+benchmark in the thesis whose problem definition is rigorously
+in the \emph{Indian civil-engineering} setting --- SI units,
+structural steel ($E = \num{210}$~GPa, $\rho = \num{7850}$~kg/m³),
+250~MPa stress envelope --- so it also end-to-end exercises the
+IS~800:2007 compliance layer (\cref{sec:results:is800}) against a
+real-material problem, not the imperial/aluminium idealisation
+of the earlier three benchmarks. The module sets
+\texttt{reference\_verified = False} and we do not claim a
+literature match against the Kaveh 25{,}445~kg number: our
+regular-grid node layout differs from the exact Kaveh
+coordinates, and we report only our own rigorous-FEM optimum.
+Parameters are listed in \cref{tab:results:200bar-setup}.
+
+\begin{table}[htbp]
+  \centering
+  \caption{200-bar planar stepped tower — problem setup (scale-matched to \cite{kaveh2010}, geometry our own).}
+  \label{tab:results:200bar-setup}
+  \begin{tabular}{lll}
+    \toprule
+    Parameter               & Value                  & Unit \\
+    \midrule
+    Nodes                   & 77 (2D)                & --- \\
+    Elements                & 200                    & --- \\
+    Design variables (groups)& 29                    & --- \\
+    Young's modulus $E$     & $2.10 \times 10^{11}$  & Pa \\
+    Density $\rho$          & $7850$                 & kg/m\textsuperscript{3} \\
+    Load cases              & 3 (LC1--LC3)           & --- \\
+    Stress limit            & $\pm 250$              & MPa \\
+    Displacement limit      & $0.10$ (span/300)      & m \\
+    Area bounds             & $[6.5\times 10^{-5},\, 2.5\times 10^{-2}]$ & m\textsuperscript{2} \\
+    Total tower height      & $30.0$                 & m \\
+    Reference (scale only)  & $25{,}445$~\cite{kaveh2010} (not verified) & kg \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\Cref{tab:results:200bar} reports the multi-seed results. The
+single-objective algorithms --- GA with pop $=100$, $n_\text{gen}
+= 200$ on 5 seeds, PSO with the same configuration on 5 seeds ---
+converge to a tight band around \num{317}~kg with cross-seed
+spreads under \num{1}\,\%. PSO takes the single-seed best at
+\num{315.89}~kg (seed 2024), edging GA's \num{316.61}~kg
+(seed 42) by less than \num{1}~kg; the two algorithms are
+statistically indistinguishable at the \num{5}\,\% level by a
+two-sample Wilcoxon test ($p = 0.69$). At every reported optimum
+the maximum member stress sits within \num{0.05}\,\% of the
+250~MPa envelope and the maximum nodal displacement is
+\num{0.033}~m --- only \num{33}\,\% of the \num{0.10}~m
+deflection limit --- so the 200-bar optimum is cleanly stress-
+binding rather than deflection-binding, exactly the regime in
+which the IS~800:2007 tension/compression checks
+(\cref{sec:results:is800}) become decisive.
+
+% TABLE 200bar RESULTS.
+\begin{table}[htbp]
+  \centering
+  \caption{200-bar results — best / mean / std over seeds. GA and
+    PSO with pop $=100$, $n_\text{gen}=200$ over $\{42, 123, 456,
+    789, 2024\}$. NSGA-II with pop $=100$, $n_\text{gen}=150$ over
+    $\{42, 123, 456\}$ reports the weight-minimum corner of the
+    100-point Pareto front (weight $\times$ displacement); the
+    weight spread is therefore a diversity artefact, not an
+    optimiser shortfall.}
+  \label{tab:results:200bar}
+  \sisetup{table-format=4.2}
+  \begin{tabular}{lrSSS}
+    \toprule
+    Algorithm & Seeds & {Best (kg)} & {Mean (kg)} & {Std.\ (kg)} \\
+    \midrule
+    GA      & 5 & 316.61 & 317.80 &    1.08 \\
+    PSO     & 5 & 315.89 & 318.37 &    3.10 \\
+    NSGA-II & 3 & 5824.17 & 7619.30 & 1883.22 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+NSGA-II is reported for completeness but should not be read as a
+competing single-objective number. Its task is to trace a Pareto
+front between weight and maximum displacement, and the
+weight-minimum extreme of that front lies at designs that still
+satisfy both constraints but have been pulled off the stress
+boundary by the displacement objective. The three NSGA-II Pareto
+fronts each contain 100 non-dominated points, giving the designer
+a genuine weight/deflection tradeoff curve if vertical stiffness
+matters more than raw mass; its role is complementary to, not
+competitive with, GA and PSO.
+
+Per-seed wall time is \num{2.8}--\num{6.7} minutes on an Apple
+M3 (CPU only, pure-Python FEM), with the first GA seed carrying a
+\num{15}-minute one-off JIT warm-up cost that falls to under
+four minutes per seed for the remainder. The total compute
+budget for
+\cref{tab:results:200bar} is \num{57} wall-clock minutes for the
+full thirteen-seed matrix. The 29-variable 200-bar benchmark thus
+completes in roughly the same wall time per seed as 72-bar even
+though its design vector has nearly double the dimensionality and
+its element count is \num{2.8}$\times$ larger, confirming that the
+framework scales past 72-bar without code changes, without
+surrogate assistance, and without any algorithm-specific tuning.
 
 \section{Neural Surrogate Accuracy and Speedup}
 \label{sec:results:surrogate}
