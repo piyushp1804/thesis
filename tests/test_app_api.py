@@ -35,10 +35,15 @@ def test_benchmark_info_10bar():
     assert body["reference_optimum_weight"] > 5000
 
 
-def test_benchmark_info_not_implemented():
-    # 200-bar remains the only unverified stub after Phase 7.
+def test_benchmark_info_200bar():
+    # Phase 9: 200-bar stepped-tower is now fully implemented.
+    # reference_verified=False (geometry ours, not Kaveh's exact coords).
     r = client.get("/benchmarks/200bar")
-    assert r.status_code == 501
+    assert r.status_code == 200
+    body = r.json()
+    assert body["n_design_vars"] == 29
+    assert body["n_bars"] == 200
+    assert body["units"] == "SI"
 
 
 def test_benchmark_info_unknown():
