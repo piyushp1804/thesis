@@ -1,29 +1,234 @@
 \chapter{Introduction}
 \label{chap:introduction}
 
-% TODO (Phase 8): full prose, 10--12 pages.
-
 \section{Background and Motivation}
 \label{sec:intro:motivation}
-% TODO: problem of structural truss optimisation; economic and material
-% relevance; why classical EA approaches plateau; the AI opportunity.
+
+Steel trusses are ubiquitous in civil infrastructure — they roof
+industrial sheds and airport terminals, carry electrical
+transmission lines across hundreds of kilometres, support long-span
+pedestrian and highway bridges, and form the skeleton of stadium
+canopies. Their appeal is structural efficiency: a well-designed
+truss carries load primarily through axial action in its members,
+eliminating the bending stresses that would otherwise dominate a
+solid-beam system of equivalent span. For infrastructure-heavy
+countries the design of trusses is, in practice, a constant activity:
+in India alone, several thousand industrial sheds, power-transmission
+towers, and highway-overpass trusses are designed each year against
+the Bureau of Indian Standards' IS~800:2007 general construction
+code.
+
+Classical truss design, as taught in every civil-engineering
+programme and still dominant in Indian design offices, proceeds by
+assumption-and-check: the engineer picks trial cross-sections from a
+standard rolled-section table, runs a linear-elastic analysis,
+verifies that no member exceeds its permissible stress, that no joint
+exceeds its permissible deflection, and that slenderness
+ratios respect code clauses 3.7 and 3.8 of IS~800:2007. If the
+check fails, the engineer picks heavier sections and tries again.
+The process converges — usually after two or three iterations — to a
+feasible design, but rarely to the \emph{minimum-weight} feasible
+design. Typical trial-iteration designs carry $10$--$30\,\%$ more
+steel than the theoretical optimum, both because the engineer stops
+as soon as the design passes code rather than continuing to trim
+margin, and because the space of feasible designs is high-dimensional
+and non-convex in ways that defeat human intuition.
+
+Reducing that surplus matters economically and environmentally.
+Steel is a material with high embodied carbon (approximately
+\num{1.9}~kg~CO\textsubscript{2} per kg of structural steel produced
+in a blast-furnace route), and the construction sector accounts for
+roughly \num{11}~\% of global CO\textsubscript{2} emissions. A
+\num{15}~\% reduction in steel tonnage on the tens of thousands of
+small-to-medium truss structures built annually in India is, in
+aggregate, measurable at the sector level.
+
+Structural optimisation as a computational discipline addresses this
+problem directly. Rather than check a handful of human-picked trial
+designs, an optimiser explores a population of thousands of
+candidate designs simultaneously and lets an evolutionary or
+gradient-based search drive the population toward the feasible
+minimum-weight frontier. For truss sizing — where the design
+variables are a small number of cross-sectional areas, and the
+objective is a simple linear function of those areas — the field
+has mature tools. Genetic algorithms
+(GA)~\cite{deb2001}, particle swarm optimisation
+(PSO)~\cite{kennedy1995pso}, and multi-objective evolutionary
+approaches such as NSGA-II~\cite{deb2002nsga2} routinely match or
+improve upon the best published hand-computed optima for canonical
+benchmarks (Sunar \& Belegundu's 10-bar planar
+truss~\cite{sunar1991}, Venkayya's 25-bar spatial
+truss~\cite{venkayya1971}, and Fleury \& Schmit's 72-bar spatial
+tower~\cite{fleury1980}) within the first few hundred generations.
+
+There is, however, a workflow cost. Every candidate design
+evaluated by the optimiser requires a full finite-element (FEM)
+solve, and a single evolutionary run with population
+\num{100} and \num{500} generations evaluates \num{50000}
+designs. Even at a modest \num{50}~ms per FEM solve, that is forty
+minutes of wall-clock time per algorithm per benchmark — too slow to
+fit inside the iterative dialogue an engineer wants with the tool.
+In a design office this cost is what keeps optimisation on the
+researcher's bench and off the practitioner's desk.
+
+This thesis argues that three developments in modern machine learning
+— data-driven surrogate models, reinforcement learning, and large
+language models — can reduce that cost to the point where
+optimisation becomes usable as a real design aid. A neural surrogate
+trained on a few thousand FEM evaluations can predict weight,
+displacement, and stress well enough to replace the FEM call in the
+evolutionary inner loop, yielding a $50$--$150$-fold speedup
+\cite{queipo2005,forrester2008,persia2025}. A reinforcement-learning
+policy, trained against the same surrogate, can propose
+near-optimal designs in a single forward pass, skipping the
+evolutionary search entirely \cite{hayashi2020rl,brown2022rl}.
+A large language model, asked in natural language for a plausible
+design for a stated geometry and loading, can produce a
+starting-point design vector that warm-starts the
+evolutionary search and cuts generations-to-convergence
+\cite{geng2024,makatura2024}. None of these individually is novel.
+The integrative claim of this thesis is that combining all three on
+top of a classical GA/PSO/NSGA-II core, and wiring the whole stack
+to Indian code-compliance checks (IS~800:2007), produces a framework
+that is both faster and more directly useful than any published
+prior to this work.
 
 \section{Problem Statement}
 \label{sec:intro:problem}
-% TODO: a single, crisp problem statement -- minimise weight of planar
-% and spatial trusses under IS~800:2007 constraints, using an AI-
-% accelerated evolutionary framework.
+
+Given a planar or spatial steel truss of fixed topology, fixed
+loading, and fixed support conditions, find the cross-sectional
+area assignment over the truss members that minimises total
+structural weight subject to:
+\begin{enumerate}
+  \item member stress within IS~800:2007 permissible stresses for
+        the applicable grade of steel, under each specified load
+        case;
+  \item maximum free-node displacement within the serviceability
+        deflection limit prescribed by IS~800:2007 Clause~5.6.1;
+  \item member slenderness ratios within the clause-3.8 limits
+        (\num{180} for compression members, \num{400} for tension);
+  \item cross-sectional areas within specified lower and upper
+        bounds drawn from the standard rolled-section catalogue.
+\end{enumerate}
+Solve this problem to within $\num{2}\,\%$ of the published
+literature optimum on four canonical benchmarks
+(10-bar~\cite{sunar1991}, 25-bar~\cite{venkayya1971},
+72-bar~\cite{fleury1980}, 200-bar~\cite{kaveh2010}) using
+an integrated framework that combines classical evolutionary
+optimisation (GA, PSO, NSGA-II) with three machine-learning
+accelerators (neural surrogate, reinforcement-learning policy,
+large-language-model warm-start), and verify that every reported
+optimal design satisfies IS~800:2007 end-to-end.
 
 \section{Research Objectives}
 \label{sec:intro:objectives}
-% TODO: four-to-six bulleted objectives that map 1-to-1 onto the
-% validation gates of Layers 2--8 (see \cref{chap:methodology}).
+
+The thesis pursues six quantitative objectives, each tied to a
+measurable validation gate:
+\begin{enumerate}
+  \item \textbf{Benchmark reproducibility.} Encode the four
+        canonical truss benchmarks such that plugging the published
+        optimum area vector into the finite-element model reproduces
+        the published weight within $\num{0.5}\,\%$ and satisfies
+        every published constraint.
+  \item \textbf{Classical optimiser accuracy.} Demonstrate that a
+        standard GA, PSO, and NSGA-II — with default pymoo
+        hyperparameters~\cite{blank2020pymoo} — converge to within
+        $\num{2}\,\%$ of the literature optimum across ten random
+        seeds for each benchmark, and that NSGA-II produces at
+        least 20 non-dominated points on the weight-vs-displacement
+        Pareto front.
+  \item \textbf{Surrogate speedup and fidelity.} Train a neural
+        surrogate (MLP, \mbox{\num{256}-\num{128}-\num{64}} hidden,
+        Adam~\cite{kingma2015adam}) that achieves
+        $R^{2} > \num{0.98}$ for weight prediction on a
+        held-out test set and, when used in place of FEM in the
+        evolutionary inner loop, yields at least a $50\times$
+        wall-clock speedup while staying within $\num{3}\,\%$ of
+        the literature optimum.
+  \item \textbf{Reinforcement-learning feasibility.} Train a PPO
+        agent~\cite{schulman2017ppo} in a truss-design environment
+        (surrogate-accelerated) and demonstrate convergence to
+        within $\num{5}\,\%$ of the literature optimum on at
+        least three of four benchmarks.
+  \item \textbf{LLM warm-start benefit.} Show that seeding the
+        initial GA population with a design vector proposed by an
+        LLM (Anthropic Claude API) reduces the mean number of
+        generations-to-convergence by $\num{20}$--$\num{30}\,\%$
+        relative to random initialisation on at least three of the
+        four benchmarks, with paired-Wilcoxon $p < 0.05$.
+  \item \textbf{Code compliance and reproducibility.} Implement
+        IS~800:2007 stress, slenderness, and deflection clauses as
+        composite constraint functions; verify every reported
+        optimal design passes the full compliance check; and
+        package the entire framework (optimisers, surrogate,
+        RL agent, LLM client, compliance checks) behind a Streamlit
+        demo that completes a full 10-bar optimisation in under
+        ten seconds.
+\end{enumerate}
 
 \section{Scope and Limitations}
 \label{sec:intro:scope}
-% TODO: static loading only; size optimisation (not topology); pin-
-% jointed members; Indian code only; four canonical benchmarks.
+
+The thesis is deliberately scoped:
+\begin{itemize}
+  \item Only \emph{sizing} optimisation — cross-section areas are
+        the design variables. Topology (which bars exist) and shape
+        (where nodes sit) are held fixed per the literature
+        benchmarks.
+  \item Only \emph{static} loading — dynamic, seismic, and fatigue
+        analyses are out of scope.
+  \item Only \emph{linear} analysis — geometric and material
+        non-linearity are ignored. All benchmarks are small-
+        displacement pin-jointed trusses for which the linear
+        approximation is well-justified.
+  \item Only \emph{pin-jointed} members — no moment connections,
+        no bolt-group design, no welded-joint detailing.
+  \item Only the \emph{Indian} code — IS~800:2007 is implemented;
+        AISC~360, Eurocode~3, and other regional codes are not.
+        A later extension could wire them in without re-architecting,
+        but that is future work.
+  \item Four benchmarks — the canonical 10-bar, 25-bar, 72-bar, and
+        200-bar. A broader benchmark set (real industrial towers,
+        bridge trusses) would be a separate study.
+\end{itemize}
+
+These restrictions let the thesis make precise quantitative claims
+on a well-bounded problem rather than sprawling into a framework
+comparison that no M.Tech timeline can afford to complete.
 
 \section{Organisation of the Thesis}
 \label{sec:intro:organisation}
-% TODO: one paragraph per subsequent chapter.
+
+The remainder of the thesis is organised as follows.
+
+\textbf{Chapter~2 (Literature Review)} surveys classical truss
+optimisation, from Schmit's founding 1960s formulations through the
+evolutionary-algorithm era up to the contemporary machine-learning
+literature. It positions each of the three AI accelerators (neural
+surrogate, RL, LLM) against its closest published precedent and
+identifies the integrative gap this thesis fills.
+
+\textbf{Chapter~3 (Methodology)} describes the five-layer
+computational architecture in detail: the finite-element engine, the
+classical-optimiser wrappers, the neural surrogate, the PPO agent,
+the LLM warm-start pipeline, and the IS~800:2007 compliance
+checker. The chapter specifies exact hyperparameters, training
+protocols, and the inter-layer data contracts that make the
+framework modular.
+
+\textbf{Chapter~4 (Results)} presents the numerical findings: per-
+benchmark convergence for each optimiser, surrogate accuracy and
+achieved speedup, RL agent performance, LLM-warm-start convergence
+reductions, multi-objective Pareto fronts, and IS~800:2007
+compliance verification. Each result is reported with cross-seed
+statistics and compared to the published literature optimum.
+
+\textbf{Chapter~5 (Conclusions and Future Work)} summarises the
+thesis's contributions, answers each of the six research objectives
+against its validation gate, discusses limitations and threats to
+validity, and sketches a research agenda that follows naturally
+from this work — code support, real-geometry benchmarks, topology
+optimisation, and deployment as a cloud-based design aid for the
+Indian practitioner community.
