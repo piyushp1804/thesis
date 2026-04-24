@@ -1,29 +1,269 @@
 \chapter{Conclusions and Future Work}
 \label{chap:conclusion}
 
-% TODO (Phase 8): ~6 pages.
+This final chapter collects the thesis's contributions, matches
+them back against the research objectives of
+\S\ref{sec:intro:objectives}, states the limitations honestly,
+and maps out a research programme for the successor M.Tech or
+Ph.D.\ cohort who picks up the codebase.
 
 \section{Summary of Contributions}
 \label{sec:concl:summary}
-% TODO: integrative-novelty statement (GA+PSO+NSGA-II + surrogate + RL
-% + LLM + IS~800 in one reproducible codebase); quantitative validation
-% against the four benchmarks; reproducibility artefacts (seeded runs,
-% open-source code, Streamlit demo).
 
-\section{Answers to Research Objectives}
+The thesis delivers five concrete, numerically validated
+contributions.
+
+\paragraph{C1. A validated integrated framework.} An end-to-end
+Python framework (\texttt{src/} $+$ \texttt{scripts/} $+$
+\texttt{thesis\_writeup/}) that composes seven previously-separate
+research threads --- classical evolutionary optimisation
+(GA/PSO/NSGA-II), finite-element analysis, neural surrogates,
+reinforcement learning, LLM warm-start, IS~800:2007 compliance
+checking, and a Streamlit+FastAPI user interface --- into one
+reproducible system. The PSO-best on the 10-bar benchmark
+matches Sunar \& Belegundu's 1991 published optimum
+(\num{5060.85}~lb) to \num{5061.05}~lb, a $\num{0.004}\,\%$
+error that acts as the end-to-end validation signature for the
+entire stack
+(\cref{sec:results:10bar}).
+
+\paragraph{C2. A 100$\times$ neural surrogate.} A three-hidden-
+layer MLP surrogate (widths $[\num{256},\num{128},\num{64}]$,
+trained on \num{10000} Latin-hypercube samples)
+achieves $R^2=\num{0.9993}$ on the weight head of the 10-bar
+benchmark and delivers a $\num{132}\times$ wall-clock speedup
+when used as a drop-in FEM replacement in the pymoo inner loop,
+with surrogate-in-loop optima matching FEM-in-loop optima to
+$\num{0.09}\,\%$
+(\cref{sec:results:surrogate},
+\cref{sec:results:ablation:surrogate}).
+
+\paragraph{C3. A novel 72-bar infeasibility finding.} A
+rigorous hard-constraint ($g \le 0$) re-run of the 72-bar
+spatial tower exposes that the widely-cited literature optima
+--- Camp \&~Bichon 2004 at \num{380.24}~lb, Bekdas et al.~2015
+at \num{379.62}~lb --- are, under tight constraint enforcement,
+infeasible by \num{22}--\num{62}\,\% on displacement and
+\num{22}\,\% on stress. The true rigorously-feasible optimum
+sits near $\num{549}$~lb. This is a methodological correction
+to the published literature, not an optimiser shortfall; the
+ablation of
+\cref{sec:results:ablation:constraints} makes the point in
+both figures and numbers
+(\cref{sec:results:72bar}).
+
+\paragraph{C4. An LLM warm-start efficacy map.} On the smallest
+benchmark (10-bar, \num{40} seeds), an LLM warm-start reduces
+generations-to-convergence by $\num{36.8}~\%$ against random
+initialisation at paired-Wilcoxon $p=\num{0.0046}$ --- a strong
+positive result driven by the LLM's ability to identify the
+redundant-member set $\{2, 5, 6, 10\}$. On the two larger 3D
+benchmarks the effect weakens: $\num{76.6}\,\%$ generation
+reduction on 25-bar ($p=\num{0.25}$ with only three seeds) and
+a null result on 72-bar ($-\num{4.8}~\%$ at $p=\num{0.81}$,
+five seeds). The result maps out where LLM assistance helps in
+the structural-optimisation pipeline: it helps most where
+the LLM can surface an architectural insight --- redundant
+members, symmetry groups --- that the GA would otherwise
+rediscover through trial and error
+(\cref{sec:results:llm}).
+
+\paragraph{C5. An IS~800:2007-compliant, reproducible design
+aid.} The Streamlit UI of \cref{sec:method:ui} exposes the full
+stack --- benchmark selection, algorithm choice, surrogate
+toggle, LLM warm-start toggle, IS~800 compliance report --- as
+a single-command web app that a civil-engineering practitioner
+can drive without writing Python. The complete pipeline
+including IS~800 checking and a confidence-ranked
+LLM-suggested cross-check finishes in under ten seconds on
+10-bar on a laptop CPU. The repository is pinned to
+\texttt{tag: phase-8b-complete}; every reported number is
+reproducible against that tag without an Anthropic API key
+because all LLM responses are cached under
+\texttt{results/llm\_cache/}.
+
+\section{Answers to the Research Objectives}
 \label{sec:concl:objectives}
-% TODO: each objective from \cref{sec:intro:objectives} restated and
-% answered with the corresponding numerical result from
-% \cref{chap:results}.
+
+Each of the five research objectives stated in
+\S\ref{sec:intro:objectives} is answered below, with the
+relevant result section cited in parentheses.
+
+\paragraph{Objective 1 --- Reproduce classical benchmark
+optima within \num{2}~\% of published values.} Achieved on
+10-bar ($\num{0.004}\,\%$ error against Sunar~\cite{sunar1991})
+and 25-bar ($\num{0.008}\,\%$ error against
+Schmit~\cite{schmit1976}). On 72-bar the $\num{2}\,\%$ target
+is unachievable against the published \num{379.62}~lb because
+that optimum is infeasible under rigorous constraint
+enforcement; the rigorous-feasibility optimum of $\num{549}$~lb
+is itself reached to within $\num{0.13}~\%$ cross-seed
+(\cref{sec:results:10bar,sec:results:25bar,sec:results:72bar}).
+
+\paragraph{Objective 2 --- Generate Pareto fronts with at
+least 20 non-dominated points.} Achieved: NSGA-II on 10-bar
+returns \num{24}--\num{32} non-dominated points per seed
+(\cref{sec:results:pareto}).
+
+\paragraph{Objective 3 --- Achieve at least \num{50}$\times$
+speedup via surrogate with $R^2 > \num{0.98}$.} Achieved
+on the weight head ($R^2=\num{0.9993}$, $\num{132}\times$
+speedup); partially achieved on the stress and displacement
+heads ($R^2 = \num{0.81}/\num{0.87}$, used as feasibility
+screens with FEM fallback, after
+Queipo~\cite{queipo2005})
+(\cref{sec:results:surrogate,sec:results:cost}).
+
+\paragraph{Objective 4 --- PPO agent within \num{5}\,\% of the
+best classical solver.} Not achieved in terms of single-
+instance optimality ($+\num{16.12}\,\%$ gap on 10-bar); the
+value of the layer is instead its $\num{0.2}$-s inference
+latency, consistent with Zhao~\cite{zhao2021rl}'s
+transferability framing. This is reported as a mixed result
+rather than a claimed success
+(\cref{sec:results:rl,sec:results:threats}).
+
+\paragraph{Objective 5 --- LLM warm-start reduces generations-
+to-convergence by at least \num{20}\,\%.} Achieved on 10-bar
+($\num{36.8}\,\%$ reduction, $p<\num{0.005}$); not reliably on
+larger benchmarks. The effect-map finding of
+\cref{sec:results:llm} is itself the contribution: the LLM
+helps where it can add qualitative architectural insight.
+
+\section{Practical Implications for Indian Civil Engineering}
+\label{sec:concl:practical}
+
+The thesis is framed around Indian infrastructure, and the
+IS~800:2007 compliance layer is the concrete bridge from
+benchmark results to design-office utility. Three practical
+implications follow.
+
+First, the hybrid surrogate/FEM architecture of
+\cref{sec:results:surrogate:feasibility} collapses the
+\num{30}--\num{40}-minute-per-run cost of classical
+optimisation into the sub-\num{20}-second range. For a design
+office running parametric studies --- ``how does the optimum
+shift if the live load increases by \num{15}\,\%?''
+``does adding a cross-bracing change the tower weight?'' --- this
+opens up interactive usage that was previously batch-only.
+
+Second, the 72-bar rigorous-feasibility finding matters for
+Indian transmission-tower practice specifically, where
+transmission towers are routinely sized using commercial
+software whose default constraint handling is
+soft-penalty. A tower signed off at \num{380}~lb-per-tonne
+equivalent under soft penalties may be carrying
+\num{22}--\num{62}\,\% infeasibility in displacement; the
+routine engineering decision to shift to hard-feasibility
+enforcement would push the design mass up by
+$\sim\num{45}\,\%$. This is a first-order economic fact that
+the Indian civil-engineering community should be aware of,
+independent of the specific framework developed here.
+
+Third, the Streamlit UI exposes the whole stack in a form that
+does not require Python literacy: an IIT~BHU M.Tech project
+student, or a junior engineer at a consulting firm, can drive
+an LLM-assisted IS~800-compliant optimisation without
+writing code. The ten-second turnaround makes it usable during
+a design-review meeting rather than as a background batch job.
 
 \section{Limitations}
 \label{sec:concl:limitations}
-% TODO: static linear analysis only; sizing (not topology) optimisation;
-% pin-jointed members; API-hosted LLM (not fine-tuned); four benchmarks.
+
+The thesis's limitations, already discussed in detail in
+\cref{sec:results:threats}, are summarised here for
+completeness.
+
+The finite-element kernel is linear elastic and
+small-displacement: no geometric or material non-linearity, no
+post-buckling analysis, no dynamic effects. The optimisation
+is sizing-only, not topology: the bar connectivity is fixed by
+the benchmark definition and only the member areas are
+optimised. Seed counts are small on 25-bar and 72-bar NSGA-II
+(three each), and the PPO agent is trained and evaluated on a
+single problem instance without transfer learning. The IS~800
+compliance module uses a single column-buckling curve (curve
+$a$) regardless of cross-section type, and the LLM is not
+fine-tuned --- it is accessed through the public Anthropic
+Claude API at temperature \num{0.3}.
+
+None of these limitations are load-bearing for the
+contributions C1--C5 above; but they do set the boundary of
+claims one should make on the framework's behalf.
 
 \section{Future Work}
+\label{sec:conclusion:future}
 \label{sec:concl:future}
-% TODO: topology optimisation integration; dynamic and seismic
-% loading; richer connection design per IS~800:2007 Section~10;
-% fine-tuned domain-specific LLM; multi-fidelity surrogates;
-% additional Indian-code standards (IS~875, IS~1893).
+
+Five directions follow naturally from the thesis, in
+approximate order of difficulty and expected impact.
+
+\paragraph{F1. Non-linear and dynamic analysis.} The FEM kernel
+could be extended with geometric non-linearity (co-rotational
+bar formulation) and dynamic analysis (Newmark-$\beta$ time
+integration), following Bathe~\cite{bathe2014fem} and Cook et
+al.~\cite{cook2002fem}. This would allow the framework to
+address seismic loading per IS~1893, bringing it in line with
+modern Indian design practice for infrastructure in Zone~IV
+and Zone~V. The optimiser and surrogate layers are agnostic
+to the underlying solver, so this is largely a kernel
+replacement rather than an architectural change.
+
+\paragraph{F2. Topology optimisation.} Sizing optimisation
+takes a fixed bar connectivity as input; topology optimisation
+asks which bars should exist in the first place. The
+ground-structure approach of Achtziger~\cite{achtziger1999} and
+the SIMP approach of Bendsoe and Sigmund~\cite{bendsoe2003topo}
+could be wrapped behind the same \texttt{TrussProblem}
+adapter, with the design vector augmented by binary existence
+variables. The neural-surrogate architecture would need to
+accommodate variable-dimension inputs --- one natural fit is a
+graph neural network (GNN) that operates on the truss
+adjacency, following Fey and Lenssen~\cite{fey2019gnn}, which is
+listed as F3 below.
+
+\paragraph{F3. GNN surrogate for variable-topology design.} The
+MLP surrogate reported in this thesis is fixed-width: it cannot
+handle problems where the number of bars changes across
+designs. A graph neural network over the truss adjacency,
+trained on a mix of topologies, would lift this restriction
+and would enable the GA to vary connectivity as well as areas.
+This is the single highest-leverage extension for expanding
+the framework's scope.
+
+\paragraph{F4. Transfer learning across benchmarks.} The PPO
+agent in the current thesis is trained on one problem instance
+and does not transfer. A shared observation encoder (a GNN, as
+in F3) plus a policy trained across the full four-benchmark
+family would directly test Zhao~\cite{zhao2021rl}'s
+transferability claim: that the value of RL lies in
+cross-instance generalisation. The architecture extension is
+modest; the compute is a few GPU-days.
+
+\paragraph{F5. Fine-tuned domain-specific LLM.} The LLM
+warm-start in this thesis uses the public Claude API
+unmodified. A next iteration would fine-tune an open-weights
+model (e.g.\ Llama 3, Mistral, or Qwen) on a corpus of
+IS~800:2007 and IS~875 worked examples plus the four benchmark
+families, potentially specialising the prompt-to-design
+mapping to the point where a single call achieves the 25-bar
+and 72-bar results that the current zero-shot setup misses.
+The effect-size ceiling is unclear, but the thesis's
+effect-map finding (C4) suggests that the ceiling is bounded
+above by how much qualitative insight a human expert could
+offer for the same problem.
+
+\paragraph{F6. Indian transmission-tower validation.}
+Ultimately, the framework should be validated not against
+textbook benchmarks but against real Indian transmission-tower
+tender drawings. This requires a data-sharing arrangement with
+Power Grid Corporation of India Limited (PGCIL) or a
+consulting firm; it is the single step that would move the
+framework from demonstration to deployment.
+
+\bigskip
+\noindent
+All six directions above are open for a successor M.Tech or
+Ph.D.\ cohort and are tracked in
+\texttt{docs/ROADMAP.md} at the \texttt{phase-8b-complete}
+repository tag.

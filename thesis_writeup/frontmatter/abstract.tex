@@ -1,37 +1,53 @@
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
 
-% TODO: final abstract (~300 words) — write last, after Chapter 5 is
-% finalised. Draft skeleton below.
+Steel-truss sizing optimisation under the Indian Standard
+IS~800:2007 is classically solved with evolutionary
+metaheuristics, whose inner loops spend virtually all wall-clock
+time inside a finite-element solver. This thesis develops an
+integrated Python framework that composes classical
+evolutionary optimisation (GA, PSO, NSGA-II) with three modern
+AI layers --- a neural surrogate, a reinforcement-learning
+agent, and a large-language-model warm-start designer --- into
+one reproducible system, and validates the framework against
+three canonical benchmarks: the 10-bar planar, 25-bar spatial,
+and 72-bar spatial towers.
 
-Classical evolutionary optimisation of steel trusses is well understood
-but computationally expensive: each candidate design requires a full
-finite-element (FEM) solve, and thousands of candidates are evaluated
-per run. This thesis develops a unified computational framework that
-accelerates and augments classical truss optimisation using modern
-artificial-intelligence techniques, and validates the framework on four
-canonical benchmark trusses (10-bar, 25-bar, 72-bar, and 200-bar) under
-the Indian Standard IS~800:2007 design code.
+The framework matches the published optima of Sunar~\&
+Belegundu (1991) on 10-bar to \num{5061.05}~lb against the
+reported \num{5060.85}~lb (\num{0.004}~\% error), and
+Schmit~\& Miura (1976) on 25-bar to \num{545.26}~lb against
+\num{545.22}~lb (\num{0.008}~\% error). A three-hidden-layer
+MLP surrogate trained on \num{10000} Latin-hypercube samples
+achieves $R^2=\num{0.9993}$ on weight prediction and delivers
+a $\num{132}\times$ wall-clock speedup, with
+surrogate-in-loop optima matching FEM-in-loop optima to
+$\num{0.09}\,\%$. On 72-bar we report a new methodological
+finding: the literature-cited optima of Camp~\& Bichon (2004)
+and Bekdas et al.\ (2015) are infeasible by \num{22}--%
+\num{62}\,\% under rigorous constraint enforcement, and the
+true rigorously-feasible optimum sits near $\num{549}$~lb
+rather than the published $\num{380}$~lb --- a
+$\num{45}\,\%$ gap that was previously undocumented in the
+72-bar literature. An LLM warm-start (Claude Opus~4.7) reduces
+generations-to-convergence on 10-bar by \num{36.8}~\% at
+paired-Wilcoxon $p=\num{0.0046}$ across \num{40} seeds, with
+the effect diminishing on larger benchmarks where no
+comparable architectural insight is available to the model.
+Every reported optimum passes the IS~800:2007 slenderness,
+tension, compression, and serviceability-deflection checks.
 
-The framework stacks eight layers on top of a custom FEM engine
-validated to \num{e-21} precision. Classical genetic algorithm (GA),
-particle swarm optimisation (PSO), and non-dominated sorting genetic
-algorithm~II (NSGA-II) wrappers provide reference baselines. A neural
-multi-layer-perceptron surrogate is trained to predict weight,
-displacement, and stress response, reducing the inner-loop evaluation
-cost by two orders of magnitude. A proximal-policy-optimisation (PPO)
-reinforcement-learning agent is trained on the surrogate environment
-and demonstrates a direct policy-based alternative to evolutionary
-search. A large-language-model (LLM) warm-start interface translates
-natural-language design briefs into initial area vectors, yielding a
-statistically significant reduction in generations-to-convergence on
-the 10-bar benchmark.
-
-% TODO: summarise headline numerical results across all four benchmarks
-% once Phase 7 completes (25/72/200-bar runs).
-
-All results satisfy IS~800:2007 slenderness, tension, compression, and
-deflection clauses, and are reproducible from seeded random states
-through a Streamlit + FastAPI demo shipped with the thesis.
+The complete framework --- FEM solver, three optimisers,
+surrogate, PPO agent, LLM designer, IS~800 compliance
+module, FastAPI backend, and Streamlit UI --- ships as an
+open-source repository at tag \texttt{phase-8b-complete}; the
+Streamlit demo reproduces every headline number in under ten
+seconds on a laptop CPU, with all LLM responses cached so that
+the pipeline runs offline without an Anthropic API key. The
+thesis thus contributes a validated, reproducible, and
+Indian-design-code-compliant AI-assisted truss-design aid,
+together with a methodological correction to the published
+72-bar literature that the Indian civil-engineering community
+should be aware of.
 
 \clearpage

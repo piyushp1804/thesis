@@ -23,7 +23,7 @@ Chapter~\ref{chap:results}.
 \section{Framework Overview}
 \label{sec:method:overview}
 
-Figure~\ref{fig:arch} --- reproduced from \texttt{docs/thesis\_vision.md}
+Figure~\ref{fig:method:arch} --- reproduced from \texttt{docs/thesis\_vision.md}
 \S2 --- sketches the eight-layer stack. An incoming design vector
 $\mathbf{x}\in\mathbb{R}^{n_\text{vars}}$ (member cross-sectional
 areas, possibly after symmetry grouping) is passed to either (a)
@@ -50,6 +50,18 @@ from the top-level CLI scripts (\texttt{scripts/run\_single.py},
 making every result in Chapter~\ref{chap:results} exactly
 reproducible.
 
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.98\textwidth]{fig_3_9_system_architecture.png}
+  \caption{Framework architecture. Three horizontal bands
+    group the modules by role: benchmarks and constraints on
+    top, the compute kernels (FEM, surrogate, PPO) in the
+    middle, and the user-facing layers (LLM designer, FastAPI,
+    Streamlit) at the bottom. Every arrow is a synchronous
+    Python call; there are no long-running services.}
+  \label{fig:method:arch}
+\end{figure}
+
 \section{Finite-Element Foundation}
 \label{sec:method:fem}
 
@@ -61,6 +73,17 @@ thesis's thesis is about the \emph{optimiser} layer, not a new FEM
 formulation. The implementation follows
 Logan~\cite{logan2017fem} and Cook et al.~\cite{cook2002fem}
 chapter by chapter.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.85\textwidth]{fig_3_1_truss_element.png}
+  \caption{Two-node pin-jointed bar element used by
+    \texttt{src/fem/element.py}. Nodes $i$ and $j$ carry two
+    (2D) or three (3D) translational degrees of freedom; the
+    element is parameterised by length $L$, cross-section $A$,
+    Young's modulus $E$, and orientation $\theta$.}
+  \label{fig:method:truss-element}
+\end{figure}
 
 \paragraph{Element stiffness.} For a bar element with nodes $i$ and
 $j$, length $L$, cross-section $A$, Young's modulus $E$, and
@@ -203,7 +226,17 @@ pymoo's GA with default operators: simulated-binary crossover
 $p_c=\num{0.9}$, polynomial mutation with $\eta_m=\num{20}$ and
 $p_m = 1/n_\text{vars}$, and tournament selection of
 size \num{2}. Population size is \num{100} and generation budget is
-\num{500}.
+\num{500}. \Cref{fig:method:ga-flow} shows the control flow.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.65\textwidth]{fig_3_2_ga_flowchart.png}
+  \caption{Genetic-algorithm control flow. Orange arrows
+    denote the outer population loop; the optional LLM
+    warm-start replaces the random initialiser in the first
+    box.}
+  \label{fig:method:ga-flow}
+\end{figure}
 
 \paragraph{Particle swarm optimisation.}
 \texttt{src/algorithms/pso.py} uses pymoo's canonical PSO with
@@ -211,7 +244,18 @@ inertia weight $w = \num{0.9}$ (linearly decreased to
 $\num{0.4}$ over the run), cognitive weight $c_1 = \num{2.0}$, and
 social weight $c_2 = \num{2.0}$, following
 Kennedy~\cite{kennedy1995pso}. Swarm size and generation budget
-match the GA settings.
+match the GA settings. \Cref{fig:method:pso-update} illustrates
+one velocity-position update.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.70\textwidth]{fig_3_3_pso_update.png}
+  \caption{PSO velocity-position update. The next position is
+    a weighted combination of (i) the previous velocity scaled
+    by inertia, (ii) a pull toward the personal best $\mathbf{p}_i$,
+    and (iii) a pull toward the global best $\mathbf{g}$.}
+  \label{fig:method:pso-update}
+\end{figure}
 
 \paragraph{NSGA-II.} \texttt{src/algorithms/nsga2.py} adapts the
 same \texttt{TrussProblem} for the bi-objective case where the
@@ -220,6 +264,17 @@ non-dominated sort and crowding-distance selection run with the
 same SBX/polynomial operators as the GA. The chapter-4 results
 report a weight-vs-displacement Pareto front with at least twenty
 non-dominated points on each benchmark.
+\Cref{fig:method:nsga2-sorting} depicts the non-dominated
+sorting that drives the selection step.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.65\textwidth]{fig_3_4_nsga2_sorting.png}
+  \caption{NSGA-II non-dominated sorting. The population is
+    partitioned into Pareto fronts; crowding distance then
+    selects diverse representatives from each front.}
+  \label{fig:method:nsga2-sorting}
+\end{figure}
 
 \paragraph{Constraint handling.} All three solvers use the same
 static-penalty formulation: the objective presented to pymoo is
@@ -265,6 +320,18 @@ output head of dimension three: $\log(1+W)$,
 $\log(1+\delta_\text{max})$, and $\sigma_\text{max}$.
 $\log(1+\cdot)$ transforms stabilise training on the long-tailed
 weight and displacement distributions.
+\Cref{fig:method:surrogate-arch} is a schematic of the resulting
+network.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.95\textwidth]{fig_3_5_surrogate_arch.png}
+  \caption{Surrogate MLP architecture: three hidden layers of
+    widths \num{256}, \num{128}, \num{64} with ReLU and
+    dropout; three linear output heads for weight, maximum
+    stress, and maximum displacement.}
+  \label{fig:method:surrogate-arch}
+\end{figure}
 
 \paragraph{Dataset.} \texttt{src/ml/dataset.py} implements Latin-
 hypercube sampling (LHS) via \texttt{scipy.stats.qmc} to draw
@@ -329,6 +396,17 @@ with $\lambda=\num{e4}$. The quadratic penalty, rather than a
 linear one, pushes the agent's proposals back \emph{inside} the
 feasible region rather than sitting on the constraint boundary
 where the surrogate is least accurate.
+\Cref{fig:method:rl-mdp} shows the agent-environment interface.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.70\textwidth]{fig_3_6_rl_mdp.png}
+  \caption{Single-step bandit formulation of the truss-design
+    RL problem. The agent emits one action (area vector) per
+    episode; the environment evaluates it with the surrogate
+    and returns the penalised-weight reward.}
+  \label{fig:method:rl-mdp}
+\end{figure}
 
 \paragraph{Training.} \texttt{src/rl/train\_ppo.py} uses Stable
 Baselines3~\cite{schulman2017ppo}'s \texttt{PPO} class with
@@ -388,6 +466,19 @@ the offline CI run and gives the pipeline graceful degradation.
 exposes \texttt{suggest\_initial\_design(benchmark, seed)},
 which builds the prompt, calls the cached client, parses the JSON,
 clips to the design bounds, and returns the vector ready for pymoo.
+\Cref{fig:method:llm-pipeline} sketches the call-chain.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.95\textwidth]{fig_3_7_llm_pipeline.png}
+  \caption{LLM warm-start pipeline: benchmark description is
+    serialised into a chain-of-thought prompt; the (cached)
+    Claude call returns a structured-JSON design which is
+    parsed, clipped to the design bounds, and injected into
+    the GA initial population. A heuristic
+    fully-stressed-design computation is the offline fallback.}
+  \label{fig:method:llm-pipeline}
+\end{figure}
 
 \paragraph{Evaluation protocol.} \texttt{src/llm/evaluate.py}'s
 \texttt{compare\_warmstart\_vs\_random(n\_seeds)} runs two
@@ -413,6 +504,19 @@ compliance module (\texttt{src/constraints/}). Two files cooperate:
 \texttt{is800\_checks.py} implements the individual clauses as
 pure functions; \texttt{compliance.py} orchestrates them into a
 \texttt{ComplianceReport} for a given design.
+\Cref{fig:method:is800} gives the clause-level decision tree.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.85\textwidth]{fig_3_8_is800_checks.png}
+  \caption{IS~800:2007 compliance decision tree implemented in
+    \texttt{src/constraints/is800\_checks.py}. The sign of the
+    member axial force selects the tension or compression
+    branch; both branches funnel into the serviceability
+    deflection check before returning the consolidated
+    feasibility verdict.}
+  \label{fig:method:is800}
+\end{figure}
 
 \paragraph{Clause 3.8 slenderness.} For each member, the
 slenderness $\lambda = L_\text{eff}/r$ (with $r = \sqrt{I/A}$ the
