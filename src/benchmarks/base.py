@@ -102,6 +102,13 @@ class BenchmarkProblem:
     reference_optimum_weight: float
     reference_optimum_areas: np.ndarray | None = None  # per-bar, optional
     reference_verified: bool = False  # True => Phase-1 gate tests enforce
+    # Optional subset of (node_index, axis_index) pairs the displacement
+    # constraint applies to. axis: 0=x, 1=y, 2=z. If None, every free DOF
+    # of every node is checked (the conservative default — matches the
+    # original Phase-1/2 behaviour for 10-bar/25-bar). The 72-bar
+    # literature problem constrains only the lateral (x,y) displacements
+    # of the four tip nodes, so it sets this explicitly.
+    displacement_check_dofs: list[tuple[int, int]] | None = None
 
     # pre-computed derived quantities (filled in __post_init__)
     _bar_lengths: np.ndarray = field(init=False, repr=False)
@@ -195,9 +202,14 @@ class BenchmarkProblem:
                 member_abs_axial, np.abs(result.axial_forces)
             )
             worst_stress = max(worst_stress, float(np.max(np.abs(s))))
-            worst_disp = max(
-                worst_disp, float(np.max(np.abs(result.displacements)))
-            )
+            disp_field = result.displacements
+            if self.displacement_check_dofs is None:
+                lc_max_disp = float(np.max(np.abs(disp_field)))
+            else:
+                d = disp_field.reshape(-1, self.ndim)
+                vals = [abs(d[node, axis]) for node, axis in self.displacement_check_dofs]
+                lc_max_disp = float(max(vals)) if vals else 0.0
+            worst_disp = max(worst_disp, lc_max_disp)
 
         weight = float(self.density * np.sum(areas * self._bar_lengths))
 

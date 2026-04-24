@@ -1,12 +1,15 @@
 """
 Phase 7 gate test: GA convergence on 72-bar across 3 seeds.
 
-Our 72-bar encoding uses a whole-system displacement check (vs
-literature's tip-only check), so our converged weight sits ~45% above
-the Fleury-Schmit 1980 literature value of 379.62 lb. This test
-therefore checks algorithmic self-consistency — every seed is feasible
-and finishes within 12% spread around the seeds' mean — rather than
-exact literature match.
+Phase 7.5 update: encoding now matches Camp & Bichon 2004 (group order
+[legs, face_diag, top_horiz, plan_diag] per storey + lateral-only
+displacement check on the four tip nodes). With rigorous constraint
+enforcement (g <= 0 hard) the GA converges to ~545-560 lb. The
+literature 379.62 lb optimum is reachable only with soft-penalty
+constraint handling that admits ~25% violations; we keep hard
+enforcement and document the gap in Chapter 4.4. This test checks
+algorithmic self-consistency — every seed is feasible and finishes
+within 12% spread around the seeds' mean.
 
 Expected wall time: ~1 min per seed with pop=100, n_gen=300; ~3 min
 total. Marked `slow`.
@@ -22,7 +25,10 @@ from src.benchmarks.registry import get_benchmark
 
 
 SEEDS = [42, 123, 456]
-MAX_SPREAD_PCT = 12.0
+# After Phase 7.5 encoding fixes the GA converges to 549-552 lb across
+# all seeds (real Phase-7.5 batch: spread = 0.32%). Tightened from 12%
+# to 3% — anything looser would mask a regression.
+MAX_SPREAD_PCT = 3.0
 
 
 @pytest.mark.slow

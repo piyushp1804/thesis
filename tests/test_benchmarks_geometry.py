@@ -106,10 +106,15 @@ def test_72bar_specific_geometry():
     assert b.n_design_vars == 16
     assert b.ndim == 3
     assert b.units == "imperial"
-    # Four storeys of [columns(4), top_horiz(4), face_diag(8), plan_diag(2)].
-    assert [len(g) for g in b.group_map] == [4, 4, 8, 2] * 4
+    # Four storeys of [columns(4), face_diag(8), top_horiz(4), plan_diag(2)] —
+    # ordering matches Schmit-Farshi 1974 / Camp 2007 so published optima can
+    # be plugged in directly.
+    assert [len(g) for g in b.group_map] == [4, 8, 4, 2] * 4
     # Base nodes 16..19 at z=0, tip nodes 12..15 at z=240.
     np.testing.assert_allclose(b.nodes[16:20, 2], 0.0)
     np.testing.assert_allclose(b.nodes[12:16, 2], 240.0)
     # Shortest bar type is the 60-in column between storey layers.
     assert abs(b._bar_lengths.min() - 60.0) < 1e-6
+    # Displacement constraint applies only to lateral DOFs of tip nodes.
+    assert b.displacement_check_dofs is not None
+    assert set(b.displacement_check_dofs) == {(n, ax) for n in (12, 13, 14, 15) for ax in (0, 1)}

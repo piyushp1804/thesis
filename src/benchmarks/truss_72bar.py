@@ -6,12 +6,11 @@ used as a mid-complexity sizing benchmark. Our encoding follows the
 standard Fleury-Schmit 1980 geometry with uniform ±25,000 psi stress
 limits and 0.25 in displacement limit.
 
-Formulation note: the literature 379.62 lb optimum assumes the 0.25 in
-displacement limit applies ONLY to the tip nodes (12-15). Our encoding
-inherits the whole-system displacement check from `base.py`, which is
-slightly more conservative. Accordingly, our 10-seed GA converges to
-~500-560 lb — noticeably above the literature value. This is a
-documented formulation choice, not a bug; see Chapter 4.4.
+Formulation: the 0.25 in displacement limit applies only to the lateral
+(x and y) displacements of the four tip nodes (12-15), per Camp &
+Bichon 2004 / Bekdaş 2015. Vertical (z) displacements and lower-storey
+nodes are unconstrained — these are wired through the
+`displacement_check_dofs` field on `BenchmarkProblem`.
 
 Geometry (inches):
 
@@ -38,10 +37,11 @@ Per storey, 18 bars:
 
 4 storeys × 18 = 72 bars.
 
-Per storey, 4 design groups:
-    Columns (4 bars)
-    Top horizontals (4 bars)
+Per storey, 4 design groups (ordering matches Schmit-Farshi 1974 / Camp 2007
+so that published optima can be plugged in directly):
+    Columns / legs (4 bars)
     Face diagonals (8 bars: 4 K + 4 U)
+    Top horizontals (4 bars)
     Plan diagonals (2 bars)
 
 4 storeys × 4 groups = 16 design variables.
@@ -151,7 +151,7 @@ def _build_connectivity() -> tuple[np.ndarray, list[list[int]]]:
         g_plan.append(len(conn))
         conn.append((top[1], top[3]))
 
-        groups.extend([g_col, g_top, g_face, g_plan])
+        groups.extend([g_col, g_face, g_top, g_plan])
 
     connectivity = np.array(conn, dtype=int)
     return connectivity, groups
@@ -187,6 +187,14 @@ def make_truss_72bar() -> BenchmarkProblem:
         name="LC2: 5-kip downward at each tip node",
     )
 
+    # Literature constraint: lateral (x,y) displacement at the four tip
+    # nodes ≤ 0.25 in. Z and lower-storey nodes are unconstrained.
+    # See Camp & Bichon (2004), Erbatur (2000), Bekdaş (2015).
+    tip_nodes = (12, 13, 14, 15)
+    disp_dofs: list[tuple[int, int]] = [
+        (n, axis) for n in tip_nodes for axis in (0, 1)
+    ]
+
     return BenchmarkProblem(
         name="72-bar spatial tower",
         reference_source="Fleury & Schmit 1980 / Erbatur 2000",
@@ -201,7 +209,8 @@ def make_truss_72bar() -> BenchmarkProblem:
         area_bounds=(0.1, 4.0),     # in^2
         stress_limit_tension=25_000.0,
         stress_limit_compression=25_000.0,
-        displacement_limit=0.25,    # in at tip
+        displacement_limit=0.25,    # in, lateral, on tip nodes only
+        displacement_check_dofs=disp_dofs,
         reference_optimum_weight=_REF_WEIGHT_LB,
         reference_optimum_areas=None,
         reference_verified=True,

@@ -57,17 +57,23 @@ def compare_warmstart_vs_random(
     pop_size: int = 100,
     n_gen: int = 500,
     target_pct_over_lit: float = 2.0,
+    target_mode: str = "auto",
 ) -> WarmstartReport:
     """Run GA with and without LLM warm-start across `seeds`.
 
-    Convergence target: `literature_optimum * (1 + target_pct_over_lit/100)`.
-    This is a problem-anchored, fair metric — both arms must close the
-    same absolute gap.
+    target_mode:
+      * "lit"  - convergence target = lit_optimum * (1 + pct/100). Use when
+                 the literature optimum is actually reachable in the FEM.
+      * "self" - target = max(final_random) * (1 + pct/100). Always
+                 reachable; use when literature optimum is infeasible
+                 under rigorous constraint enforcement (e.g., 72-bar).
+      * "auto" (default) - "lit" if every random-arm seed beats the
+                 lit-anchored target; otherwise fall back to "self".
     """
     suggestion = suggest_initial_design(benchmark)
     x0 = suggestion.x
 
-    target = benchmark.reference_optimum_weight * (
+    lit_target = benchmark.reference_optimum_weight * (
         1.0 + target_pct_over_lit / 100.0
     )
 
@@ -75,6 +81,8 @@ def compare_warmstart_vs_random(
     gens_llm: list[int] = []
     final_rand: list[float] = []
     final_llm: list[float] = []
+    histories_rand: list[list[dict]] = []
+    histories_llm: list[list[dict]] = []
 
     for seed in seeds:
         r_rand = run("ga", benchmark, seed=seed, pop_size=pop_size, n_gen=n_gen)
@@ -83,8 +91,21 @@ def compare_warmstart_vs_random(
         )
         final_rand.append(r_rand.best_weight)
         final_llm.append(r_llm.best_weight)
-        gens_rand.append(_gens_to_converge(r_rand.history, target))
-        gens_llm.append(_gens_to_converge(r_llm.history, target))
+        histories_rand.append(r_rand.history)
+        histories_llm.append(r_llm.history)
+
+    # Pick target now that we know the random-arm reachable floor.
+    use_self = target_mode == "self" or (
+        target_mode == "auto" and max(final_rand) > lit_target
+    )
+    if use_self:
+        target = max(final_rand) * (1.0 + target_pct_over_lit / 100.0)
+    else:
+        target = lit_target
+
+    for h_r, h_l in zip(histories_rand, histories_llm):
+        gens_rand.append(_gens_to_converge(h_r, target))
+        gens_llm.append(_gens_to_converge(h_l, target))
 
     gens_rand_arr = np.asarray(gens_rand, dtype=float)
     gens_llm_arr = np.asarray(gens_llm, dtype=float)
