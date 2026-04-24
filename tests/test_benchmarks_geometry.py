@@ -14,7 +14,7 @@ import pytest
 from src.benchmarks.registry import available_benchmarks, get_benchmark
 
 
-VERIFIED = ["10bar", "25bar", "72bar"]  # fully-encoded geometries
+VERIFIED = ["10bar", "25bar", "72bar", "200bar"]  # fully-encoded geometries
 
 
 def test_registry_lists_four_benchmarks():
@@ -23,9 +23,9 @@ def test_registry_lists_four_benchmarks():
 
 
 def test_unverified_benchmarks_raise_not_implemented():
-    for name in ("200bar",):
-        with pytest.raises(NotImplementedError):
-            get_benchmark(name)
+    # All four benchmarks now resolve; no NotImplementedError expected.
+    for name in ("10bar", "25bar", "72bar", "200bar"):
+        get_benchmark(name)
 
 
 @pytest.mark.parametrize("name", VERIFIED)
@@ -118,3 +118,37 @@ def test_72bar_specific_geometry():
     # Displacement constraint applies only to lateral DOFs of tip nodes.
     assert b.displacement_check_dofs is not None
     assert set(b.displacement_check_dofs) == {(n, ax) for n in (12, 13, 14, 15) for ax in (0, 1)}
+
+
+def test_200bar_specific_geometry():
+    """Kaveh-style stepped-tower 200-bar (SI, steel)."""
+    b = get_benchmark("200bar")
+    assert b.n_bars == 200
+    assert b.n_design_vars == 29
+    assert b.ndim == 2
+    assert b.units == "SI"
+    # Steel properties.
+    assert abs(b.E - 2.10e11) < 1e3
+    assert abs(b.density - 7850.0) < 1e-6
+    # Three load cases.
+    assert len(b.load_cases) == 3
+    # 11 levels x 7 columns = 77 nodes.
+    assert b.nodes.shape[0] == 77
+    # Base level (y=0) nodes 0..6, top level (y=30) nodes 70..76.
+    np.testing.assert_allclose(b.nodes[0:7, 1], 0.0)
+    np.testing.assert_allclose(b.nodes[70:77, 1], 30.0)
+    # Group sizes: 10 columns of 7 bars each, 11 horizontal rows of 6 bars
+    # each, plus 8 diagonal groups totalling 64 bars.
+    col_sizes = [len(g) for g in b.group_map[:10]]
+    horiz_sizes = [len(g) for g in b.group_map[10:21]]
+    diag_sizes = [len(g) for g in b.group_map[21:29]]
+    assert col_sizes == [7] * 10
+    assert horiz_sizes == [6] * 11
+    assert sum(diag_sizes) == 64  # 60 single-diags + 4 extra X-braces
+    # Area bounds match Kaveh & Talatahari 2010 spec.
+    assert abs(b.area_bounds[0] - 6.5e-5) < 1e-10
+    assert abs(b.area_bounds[1] - 2.5e-2) < 1e-10
+    # Displacement check restricted to top-level vertical DOFs.
+    assert b.displacement_check_dofs is not None
+    expected = {(n, 1) for n in range(70, 77)}
+    assert set(b.displacement_check_dofs) == expected
