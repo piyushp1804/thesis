@@ -1,29 +1,212 @@
 \chapter{Introduction}
 \label{chap:introduction}
 
-% TODO (Phase 8): full prose, 10--12 pages.
-
 \section{Background and Motivation}
 \label{sec:intro:motivation}
-% TODO: problem of structural truss optimisation; economic and material
-% relevance; why classical EA approaches plateau; the AI opportunity.
+
+Steel trusses remain one of the most material-efficient structural
+forms for spanning long distances, supporting heavy roof and floor
+loads, and carrying transmission and communication infrastructure.
+Their design is dominated by member sizing: once topology and
+connectivity are fixed by architectural and serviceability constraints,
+the engineer is left with the problem of choosing cross-sectional areas
+that minimise structural weight while satisfying stress, displacement,
+slenderness, and stability limits. Because steel is roughly half of
+the embodied cost and a comparable share of the embodied carbon of
+typical steel-framed construction, even single-digit reductions in
+weight translate directly into measurable economic and environmental
+savings over the lifetime of a structure. Sizing optimisation is
+therefore a perennially active research area in structural engineering
+and a natural test bed for new algorithmic ideas.
+
+The canonical formulation of the sizing problem is a constrained
+nonlinear programme in which the objective is structural weight, the
+design variables are member areas drawn from continuous or discrete
+catalogues, and the constraints are evaluated by a finite-element (FEM)
+solve. Schmit and Farshi~\cite{schmit1974} formalised the problem in
+its modern form; subsequent benchmark studies by Sunar and
+Belegundu~\cite{sunar1991}, Schmit and Miura~\cite{schmit1976}, and
+Erbatur \emph{et al.}~\cite{erbatur2000} established the four small to
+mid-scale benchmarks --- 10-bar planar, 25-bar spatial, 72-bar tower,
+and 200-bar planar --- that today serve as the de facto comparison set
+for any new optimisation method applied to truss sizing. These
+problems are reproduced verbatim in the present work, and their
+published optima are used as the validation reference throughout
+\cref{chap:results}.
+
+Classical evolutionary algorithms~--- genetic algorithms (GA), particle
+swarm optimisation (PSO)~\cite{kennedy1995pso}, and the
+non-dominated sorting genetic algorithm~II (NSGA-II)
+\cite{deb2002nsga2} --- are the dominant solvers in the truss-sizing
+literature. They are robust, gradient-free, and handle the
+combinatorial structure of discrete-section catalogues without
+modification. They have one well-documented weakness: each candidate
+design requires a full FEM solve, and convergence on even a moderately
+sized benchmark routinely consumes tens of thousands of evaluations.
+For the four benchmarks studied here, a single 500-generation,
+100-individual run takes between several minutes (10-bar) and several
+hours (200-bar) on a workstation-class CPU. When ten random seeds are
+required to estimate variance, and three algorithms are compared, the
+total wall-clock cost becomes the practical bottleneck of any thorough
+study.
+
+Three families of modern artificial-intelligence techniques offer
+complementary remedies to this bottleneck, and their integration into a
+single coherent framework is the central contribution of this thesis.
+First, neural surrogate models trained on FEM-generated data can
+replace the inner-loop solve with a forward pass through a small
+multi-layer perceptron, reducing per-evaluation cost by roughly two
+orders of magnitude~\cite{queipo2005,forrester2008}. Second,
+reinforcement-learning (RL) agents trained against the surrogate
+environment can amortise design knowledge into a policy network that
+proposes near-feasible designs in a single inference call, providing an
+alternative to population-based search~\cite{schulman2017ppo,
+hayashi2020rl,brown2022rl}. Third, large language models (LLMs) such
+as Anthropic's Claude can interpret natural-language design briefs and
+return an initial area vector that warm-starts the evolutionary loop,
+bringing semantic engineering knowledge into a formerly purely
+numerical pipeline~\cite{wei2022cot,geng2024,makatura2024}.
+
+The Indian engineering context adds a final dimension. Domestic steel
+construction is governed by IS~800:2007~\cite{is800-2007}, whose
+slenderness, tension, compression, and serviceability clauses differ in
+both form and conservatism from the AISC and Eurocode 3 provisions
+typically referenced in international truss-optimisation literature
+\cite{subramanian2008,duggal2014}. A framework that targets Indian
+practice must therefore embed IS 800 checks directly into the
+optimisation constraint set rather than treating them as a
+post-processing audit. Doing so changes which designs are admissible
+and, in our experience, frequently changes which design the optimiser
+reports as best.
 
 \section{Problem Statement}
 \label{sec:intro:problem}
-% TODO: a single, crisp problem statement -- minimise weight of planar
-% and spatial trusses under IS~800:2007 constraints, using an AI-
-% accelerated evolutionary framework.
+
+Given a planar or spatial pin-jointed steel truss with fixed topology,
+material, and applied static load case, determine the vector of
+member cross-sectional areas that minimises total structural weight
+subject to stress, displacement, slenderness, and IS~800:2007 design
+constraints, using an artificial-intelligence-accelerated evolutionary
+framework whose every component is independently validated against
+published benchmark data and whose end-to-end results are reproducible
+from seeded random states.
 
 \section{Research Objectives}
 \label{sec:intro:objectives}
-% TODO: four-to-six bulleted objectives that map 1-to-1 onto the
-% validation gates of Layers 2--8 (see \cref{chap:methodology}).
+
+The thesis pursues five concrete objectives, each tied to a specific
+validation gate developed in \cref{chap:methodology} and reported
+against in \cref{chap:results}.
+
+\begin{enumerate}
+  \item \textbf{Build and validate a custom FEM engine} for planar and
+    spatial pin-jointed trusses, verified to machine precision against
+    the analytical 3-bar problem and used as the ground-truth solver
+    for every downstream layer.
+
+  \item \textbf{Implement classical optimisation baselines}
+    (GA, PSO, NSGA-II) within a unified problem interface and
+    demonstrate convergence to within published tolerance
+    ($\pm 2$--$3\%$) on all four benchmarks across multiple random
+    seeds.
+
+  \item \textbf{Train a neural surrogate model} of the FEM solver that
+    achieves a coefficient of determination $R^{2} > 0.98$ on weight
+    prediction for held-out designs, and that yields at least a
+    fifty-fold reduction in inner-loop evaluation time when substituted
+    into the GA loop.
+
+  \item \textbf{Develop and evaluate alternative AI design routes:}
+    a proximal-policy-optimisation (PPO) reinforcement-learning agent
+    trained on the surrogate environment, and an LLM warm-start
+    interface that converts natural-language design briefs into initial
+    area vectors. Each route is evaluated against the classical
+    baseline using statistically meaningful protocols
+    (paired \emph{t}-tests, $p < 0.05$).
+
+  \item \textbf{Embed IS~800:2007 compliance} directly in the
+    optimisation constraint set --- slenderness (Cl. 3.8), tension
+    yielding and rupture (Cl. 6.2--6.3), compression (Cl. 7.1), and
+    deflection (Cl. 5.6.1) --- and verify that every reported optimum
+    passes a clause-by-clause audit and a hand-calculation spot check.
+\end{enumerate}
+
+A sixth, transverse objective is reproducibility: every numerical
+result reported in \cref{chap:results} is generated by a documented
+script, seeded explicitly, and reproducible end-to-end from a
+Streamlit + FastAPI demo shipped with the thesis source.
 
 \section{Scope and Limitations}
 \label{sec:intro:scope}
-% TODO: static loading only; size optimisation (not topology); pin-
-% jointed members; Indian code only; four canonical benchmarks.
+
+The framework deliberately restricts its scope along several axes in
+order to maintain depth where it matters.
+
+\paragraph{Analysis type.} Only linear static analysis is considered.
+Geometric and material nonlinearity, dynamic loading, seismic response,
+and fatigue are out of scope. The static assumption is consistent with
+the four benchmark formulations adopted here and is the standard
+setting in the published truss-sizing literature.
+
+\paragraph{Design problem.} Only sizing (cross-sectional area)
+optimisation is performed. Topology and shape optimisation, while
+active research areas in their own right, are explicitly excluded; the
+truss connectivity is treated as fixed input.
+
+\paragraph{Member behaviour.} All members are assumed pin-jointed and
+carry axial force only. Connection design (bolts, welds), gusset
+plates, and lateral-torsional buckling of bending members are out of
+scope. Buckling is treated through IS~800 compression strength
+provisions on individual members.
+
+\paragraph{Design code.} The code-compliance layer implements
+IS~800:2007 only. AISC 360 and Eurocode 3 implementations are
+straightforward extensions but are not pursued here.
+
+\paragraph{Benchmarks.} Validation is restricted to four canonical
+problems --- 10-bar, 25-bar, 72-bar, and 200-bar --- chosen because
+their geometries, loads, and reference optima are unambiguously
+published and have been reproduced by dozens of independent groups.
+Real industrial structures are not analysed.
+
+\paragraph{Compute envelope.} All training and optimisation are
+designed to complete on a standard laptop or workstation CPU. No GPU
+acceleration is assumed, and no cloud compute is required to reproduce
+any reported number.
 
 \section{Organisation of the Thesis}
 \label{sec:intro:organisation}
-% TODO: one paragraph per subsequent chapter.
+
+\Cref{chap:literature} surveys the relevant literature in three
+strands --- classical evolutionary truss optimisation, neural
+surrogate modelling for structural analysis, and emerging applications
+of reinforcement learning and large language models to engineering
+design --- and identifies the integrative gap that this thesis aims to
+fill.
+
+\Cref{chap:methodology} develops the eight-layer architecture in
+detail: the FEM engine and its validation, the four benchmark
+encodings, the GA / PSO / NSGA-II wrappers built on
+pymoo~\cite{blank2020pymoo} with penalty-based constraint handling
+\cite{coello2002}, the surrogate dataset generation and network
+architecture, the PPO environment and reward shaping, the LLM prompt
+and warm-start protocol, and the IS~800 compliance checker. Each
+section concludes with the validation gate that subsequent chapters
+report against.
+
+\Cref{chap:results} presents the numerical results across all four
+benchmarks and all algorithms. The 10-bar planar truss is treated
+in greatest depth because it is the most heavily reported benchmark in
+the literature and serves as the primary validation case. Surrogate
+accuracy and speedup, PPO training behaviour, the LLM warm-start study,
+the multi-objective Pareto fronts produced by NSGA-II, and the
+IS~800:2007 clause-by-clause compliance verification are reported in
+turn.
+
+\Cref{chap:conclusion} summarises the contributions, places the
+quantitative results in context against the published literature,
+discusses the limitations exposed by the experimental work, and
+identifies directions for future research --- including extension to
+topology optimisation, integration with real Indian steel-section
+catalogues per SP~6(1)~\cite{sp6-1-1964}, and migration of the
+surrogate and LLM components to in-house or domain-specialised models.
