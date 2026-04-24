@@ -1,6 +1,6 @@
 # Thesis project — handoff brief
 
-**Last updated:** 2026-04-24 (end of Phase 7)
+**Last updated:** 2026-04-24 (Phase 8a in progress: Ch 1, 2, 3 drafted)
 
 Read this file first in any new chat. It is the complete pick-up point.
 
@@ -76,7 +76,8 @@ Background docs in `docs/`:
 | 5 | Streamlit UI + FastAPI backend demo | tag `phase-5-demo` | ✅ |
 | 6 | LaTeX scaffold + Chapter 4.2 (10-bar results) | tag `phase-6-latex` | ✅ |
 | 7 | 25-bar + 72-bar benchmarks, multi-seed GA/PSO/NSGA-II batches, LLM warm-start on both, Chapter 4.3 / 4.4 / 4.8 populated | tag `phase-7-benchmarks`: all 76 tests green | ✅ |
-| **8** | **Draft remaining thesis prose** (see §7) | — | ⏳ **next** |
+| 8a | Ch 1 (Introduction), Ch 2 (Literature Review), Ch 3 (Methodology) — front half of thesis prose | Compiles clean, all citations resolved, \num{42}-page PDF | ✅ |
+| **8b** | **Ch 4.5–4.10 + Ch 5 (back half prose + remaining results subsections)** | — | ⏳ **next** |
 | 9 | Final polish — figures, bibliography, abstract, submission PDF | — | ⏳ |
 
 ---
@@ -149,9 +150,9 @@ Thesis structure (from `thesis_writeup/main.tex`):
 
 | Ch | Section | State |
 |---|---|---|
-| 1 | Introduction | skeleton — needs motivation, problem statement, contributions, thesis outline |
-| 2 | Literature review | skeleton — needs truss optimization history, metaheuristics survey, LLMs-for-engineering recent work |
-| 3 | Methodology | skeleton — needs FEM formulation, GA/PSO/NSGA-II pseudocode, LLM designer architecture, experimental protocol |
+| 1 | Introduction | ✅ drafted (234 lines) |
+| 2 | Literature review | ✅ drafted (363 lines, 7 sections) |
+| 3 | Methodology | ✅ drafted (525 lines, 9 sections) |
 | 4.1 | Experimental setup | skeleton |
 | 4.2 | 10-bar results | ✅ populated |
 | 4.3 | 25-bar results | ✅ populated |

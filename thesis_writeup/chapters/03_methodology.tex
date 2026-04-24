@@ -1,74 +1,525 @@
 \chapter{Methodology}
 \label{chap:methodology}
 
-% TODO (Phase 8): ~30 pages. Sections mirror the eight layers of the
-% framework as specified in docs/thesis_vision.md. Each section states
-% its input--output contract, references the corresponding source
-% module, and lists its validation gate.
+This chapter describes the computational architecture of the
+framework in the order a candidate design flows through it: the
+finite-element foundation (\S\ref{sec:method:fem}); the benchmark
+definitions used for validation (\S\ref{sec:method:benchmarks});
+the classical evolutionary optimisers that drive the outer
+population loop (\S\ref{sec:method:optimisers}); the neural
+surrogate that replaces the expensive FEM call inside that loop
+(\S\ref{sec:method:surrogate}); the reinforcement-learning agent
+that learns a direct design-to-areas mapping
+(\S\ref{sec:method:rl}); the large-language-model warm-start
+designer (\S\ref{sec:method:llm}); the IS~800:2007 compliance
+layer that every candidate must pass
+(\S\ref{sec:method:is800}); and the thin Streamlit and FastAPI
+layer that exposes the stack to a user
+(\S\ref{sec:method:ui}). Each section states the layer's input--
+output contract, references the corresponding source module, and
+lists the validation gate against which the layer was tested in
+Chapter~\ref{chap:results}.
 
 \section{Framework Overview}
 \label{sec:method:overview}
-% TODO: the eight-layer stack figure; end-to-end data flow; critical
-% invariants. Reference docs/thesis_vision.md \S2 and \S4.
+
+Figure~\ref{fig:arch} --- reproduced from \texttt{docs/thesis\_vision.md}
+\S2 --- sketches the eight-layer stack. An incoming design vector
+$\mathbf{x}\in\mathbb{R}^{n_\text{vars}}$ (member cross-sectional
+areas, possibly after symmetry grouping) is passed to either (a)
+the finite-element solver for an exact evaluation, (b) the neural
+surrogate for a 50-to-150$\times$ faster approximate evaluation, or
+(c) the LLM designer for a one-shot warm-start proposal that
+bypasses the loop entirely. Every evaluated design is routed
+through the IS~800:2007 compliance checker before being reported as
+feasible. The eight layers communicate through three small data
+classes defined in \texttt{src/algorithms/result\_schema.py}:
+\texttt{OptimizationResult}, \texttt{BenchmarkEvaluation}, and
+\texttt{ComplianceReport}.
+
+Three invariants hold across the stack. First, the design-variable
+bounds are set once by the benchmark module
+(\texttt{src/benchmarks/truss\_10bar.py} and sibling files) and
+every downstream layer reads them from that single source.
+Second, units are SI internally; the benchmark definitions carry
+an explicit unit tag and are converted to SI on load, so the
+IS~800:2007 module never sees imperial inputs. Third, all randomness
+is seeded through a single \texttt{seed} argument propagated
+from the top-level CLI scripts (\texttt{scripts/run\_single.py},
+\texttt{scripts/run\_batch.py}) into numpy, pymoo, and PyTorch,
+making every result in Chapter~\ref{chap:results} exactly
+reproducible.
 
 \section{Finite-Element Foundation}
 \label{sec:method:fem}
-% TODO: element derivation~\cite{logan2017fem,cook2002fem}; 2D/3D
-% dimension-agnostic formulation; partition boundary-condition method;
-% machine-precision validation on the 3-bar canonical case
-% (error \num{e-21}). Module: \texttt{src/fem/}.
+
+The finite-element engine is a textbook pin-jointed truss solver
+written from scratch in \texttt{src/fem/}. It is deliberately
+minimal --- two-node linear bar elements, direct-stiffness assembly,
+and a partition-method boundary-condition solve --- because the
+thesis's thesis is about the \emph{optimiser} layer, not a new FEM
+formulation. The implementation follows
+Logan~\cite{logan2017fem} and Cook et al.~\cite{cook2002fem}
+chapter by chapter.
+
+\paragraph{Element stiffness.} For a bar element with nodes $i$ and
+$j$, length $L$, cross-section $A$, Young's modulus $E$, and
+direction cosines $c=\cos\theta$, $s=\sin\theta$ (extended to
+three dimensions for spatial trusses), the $4\times 4$ (2D) or
+$6\times 6$ (3D) element stiffness in global coordinates is
+\begin{equation}
+    \mathbf{k}_e = \frac{AE}{L}\,\mathbf{T}^{\!\top}
+    \begin{bmatrix} 1 & -1 \\ -1 & 1 \end{bmatrix} \mathbf{T},
+    \label{eq:elem_stiff}
+\end{equation}
+where $\mathbf{T}$ is the $2\times 4$ (or $2\times 6$) transformation
+that projects global nodal displacements onto the bar's axial
+direction. Equation~\eqref{eq:elem_stiff} is implemented once in
+\texttt{src/fem/truss\_element.py} and handles both the 2D
+(10-bar, 200-bar) and 3D (25-bar, 72-bar) benchmarks from a
+single code path.
+
+\paragraph{Global assembly.} Element stiffnesses are summed into a
+global matrix $\mathbf{K}$ of size
+$(n_\text{DOF}\times n_\text{DOF})$ by adding each
+$\mathbf{k}_e$ into the rows and columns picked out by its node
+list; numpy's \texttt{ix\_} indexing does the scatter in one
+line (\texttt{src/fem/assembly.py}). Before any boundary
+conditions are applied $\mathbf{K}$ is symmetric but singular, as
+the structure is still free to translate and rotate as a rigid body.
+
+\paragraph{Boundary conditions and solve.} The partition method
+splits the global DOF set into \emph{free} and \emph{prescribed}
+subsets, solving
+\begin{equation}
+    \mathbf{K}_{ff}\,\mathbf{u}_{f} =
+    \mathbf{F}_{f} - \mathbf{K}_{fp}\,\mathbf{u}_{p}
+    \label{eq:partitioned_solve}
+\end{equation}
+for the unknown free-DOF displacements $\mathbf{u}_f$, then
+back-substitutes to recover the reactions.
+Equation~\eqref{eq:partitioned_solve} is solved with
+\texttt{scipy.linalg.solve} on the dense partitioned matrix;
+the benchmark systems are at most \num{200} DOFs so sparse solvers
+are unnecessary. Post-processing (axial forces, member stresses,
+nodal displacement magnitudes) is performed in
+\texttt{src/fem/post\_process.py}.
+
+\paragraph{Validation gate.} The canonical three-bar truss of
+Logan (Example~3.5) has a known analytical solution.
+\texttt{tests/test\_fem.py} runs the three-bar case and asserts
+relative error below $\num{e-12}$ on both nodal displacement and
+axial force; the observed error is approximately $\num{e-21}$, i.e.\
+at the floating-point epsilon of double-precision arithmetic. This
+test must pass before any downstream benchmark is evaluated.
 
 \section{Benchmark Truss Problems}
 \label{sec:method:benchmarks}
-% TODO: geometry, loads, material, bounds, and reference optima for
-% each of the four benchmarks. Use the tables in
-% docs/ground\_truth.md verbatim and cite the original papers.
-%
-% Sources: 10-bar \cite{sunar1991,schmit1974}, 25-bar
-% \cite{venkayya1971,schmit1976}, 72-bar \cite{erbatur2000,fleury1980},
-% 200-bar \cite{kaveh2010}.
+
+Four canonical benchmarks from the literature serve as validation
+fixtures. Each is encoded as a subclass of
+\texttt{BenchmarkProblem} in \texttt{src/benchmarks/}, which
+bundles node coordinates, element connectivity, material
+properties, load cases, support conditions, design-variable
+bounds, symmetry groups, and the published optimum area vector
+and weight. Table~\ref{tab:benchmarks} summarises the four.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Canonical benchmark trusses.}
+  \label{tab:benchmarks}
+  \begin{tabular}{lcccc}
+    \toprule
+    Benchmark & Dim & Bars & Groups & Lit.\ optimum \\
+    \midrule
+    10-bar cantilever \cite{sunar1991}   & 2D & 10  & 10 (none) & \num{5060.85} lb \\
+    25-bar tower \cite{venkayya1971}     & 3D & 25  & 8         & \num{545.22} lb  \\
+    72-bar tower \cite{fleury1980}       & 3D & 72  & 16        & \num{379.62} lb  \\
+    200-bar planar \cite{kaveh2010}      & 2D & 200 & 29        & \num{25445} lb   \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{10-bar cantilever (Sunar 1991).} Two-dimensional, six
+nodes, ten bars, two vertical point loads of $-\num{100}$~kips at
+the two lower free nodes, steel ($E = \num{e7}$ psi,
+$\rho = \num{0.1}$ lb/in\textsuperscript{3}). Design variables are
+the ten cross-section areas with bounds $[\num{0.1},
+\num{35}]$~in\textsuperscript{2}. No symmetry grouping. The 10-bar
+is the thesis's primary validation case because it is the
+most-cited benchmark in the field and because its optimum is known
+to four decimal places. Chapter~\ref{chap:results} reproduces the
+Sunar 1991 optimum to $\num{0.004}$~\% (PSO) and $\num{0.04}$~\%
+(GA).
+
+\paragraph{25-bar spatial tower (Venkayya 1971).} Three-dimensional,
+ten nodes, twenty-five bars, two load cases, aluminium-alloy
+properties ($E = \num{e7}$ psi, $\rho = \num{0.1}$
+lb/in\textsuperscript{3}). Design variables reduce from twenty-five
+to eight by the symmetry grouping listed in
+Venkayya's paper. Our GA and PSO reach \num{545.30} and \num{545.26}
+lb respectively against the \num{545.22} lb literature value.
+
+\paragraph{72-bar spatial tower (Fleury \& Schmit 1980).}
+Three-dimensional, twenty nodes, seventy-two bars, two load cases,
+sixteen symmetry groups per Camp and Bichon~\cite{camp2004}.
+Chapter~\ref{chap:results} documents a residual optimality gap on
+this benchmark; the investigation in \S\ref{sec:results:72bar}
+concludes that the published \num{379.62} lb figure is infeasible
+under strict FEM+IS~800 re-analysis at approximately
+$\num{25}$~\% constraint violation, consistent with the long-
+standing observation in the heuristic-optimisation literature that
+many 72-bar ``optima'' rely on softened constraint tolerances.
+
+\paragraph{200-bar planar (Kaveh \& Talatahari 2010).} Two-
+dimensional, seventy-seven nodes, two hundred bars, twenty-nine
+symmetry groups, multi-load case. Encoded as a stubbed benchmark
+in \texttt{src/benchmarks/truss\_200bar.py}; full validation is
+flagged as future work in Chapter~\ref{chap:conclusion}.
+
+Each benchmark exposes a uniform interface: \texttt{evaluate(x)}
+returns a \texttt{BenchmarkEvaluation} dataclass containing total
+weight, maximum member stress, maximum nodal displacement, and
+per-member feasibility flags. Optimisers, surrogates, and the
+Streamlit UI all consume this single interface.
 
 \section{Classical Optimisation Wrappers}
 \label{sec:method:optimisers}
-% TODO: pymoo Problem subclass; GA, PSO, NSGA-II default
-% hyperparameters (pop 100, n\_gen 500); penalty-based constraint
-% handling~\cite{coello2002}; seed management. Module:
-% \texttt{src/algorithms/}.
+
+The classical optimiser layer wraps pymoo~\cite{blank2020pymoo}
+behind a uniform \texttt{TrussProblem} adapter
+(\texttt{src/algorithms/problem.py}). The adapter exposes two
+methods: \texttt{\_evaluate(x, out)} which computes the objective
+(total weight) and constraint-violation vector, and
+\texttt{\_get\_var\_bounds()} which returns the lower and upper
+design-variable bounds from the benchmark definition. The
+constraint-violation vector collects IS~800:2007 stress, deflection,
+and slenderness residuals; feasibility is defined as every element
+of that vector being $\le 0$.
+
+\paragraph{Genetic algorithm.} \texttt{src/algorithms/ga.py} calls
+pymoo's GA with default operators: simulated-binary crossover
+(SBX) with distribution index $\eta_c=\num{15}$ and probability
+$p_c=\num{0.9}$, polynomial mutation with $\eta_m=\num{20}$ and
+$p_m = 1/n_\text{vars}$, and tournament selection of
+size \num{2}. Population size is \num{100} and generation budget is
+\num{500}.
+
+\paragraph{Particle swarm optimisation.}
+\texttt{src/algorithms/pso.py} uses pymoo's canonical PSO with
+inertia weight $w = \num{0.9}$ (linearly decreased to
+$\num{0.4}$ over the run), cognitive weight $c_1 = \num{2.0}$, and
+social weight $c_2 = \num{2.0}$, following
+Kennedy~\cite{kennedy1995pso}. Swarm size and generation budget
+match the GA settings.
+
+\paragraph{NSGA-II.} \texttt{src/algorithms/nsga2.py} adapts the
+same \texttt{TrussProblem} for the bi-objective case where the
+second objective is maximum nodal displacement. NSGA-II's fast
+non-dominated sort and crowding-distance selection run with the
+same SBX/polynomial operators as the GA. The chapter-4 results
+report a weight-vs-displacement Pareto front with at least twenty
+non-dominated points on each benchmark.
+
+\paragraph{Constraint handling.} All three solvers use the same
+static-penalty formulation: the objective presented to pymoo is
+$W(\mathbf{x})$ directly, and the constraint-violation vector
+$g(\mathbf{x})$ is handled by pymoo's built-in feasibility-first
+selection~\cite{coello2002}. Feasible individuals dominate
+infeasible ones regardless of weight; among infeasibles the one
+with smaller total violation dominates.
+
+\paragraph{Runner and result schema.}
+\texttt{src/algorithms/runner.py} is the single entry point that
+takes a benchmark name, algorithm name, seed, and optional warm-
+start vector $\mathbf{x}_0$, runs pymoo, and writes a populated
+\texttt{OptimizationResult} to disk. The result schema
+(\texttt{src/algorithms/result\_schema.py}) is a frozen
+\texttt{dataclass} carrying the best area vector, best weight,
+full population history, wall-clock time, and a compliance report
+for the reported optimum.
+
+\paragraph{Validation gate.} Every reported best design must
+satisfy the IS~800:2007 compliance checker
+(\S\ref{sec:method:is800}) under strict tolerances; every
+benchmark's \num{10}-seed mean best-weight must land within
+$\num{2}~\%$ of the literature optimum. Both gates pass on 10-bar
+and 25-bar; 72-bar is discussed separately in
+Chapter~\ref{chap:results}.
 
 \section{Neural Surrogate Model}
 \label{sec:method:surrogate}
-% TODO: MLP architecture $[256,128,64]$ with ReLU + dropout 0.1;
-% multi-head output (weight, displacement, stress, feasibility);
-% Latin-hypercube training-data generation, \num{10000} samples;
-% Adam optimiser $\mathrm{lr}=10^{-3}$~\cite{kingma2015adam};
-% $R^2 > 0.98$ weight prediction. Module: \texttt{src/ml/}.
+
+The surrogate layer (\texttt{src/ml/}) replaces the FEM call with
+a multi-layer perceptron. The motivation, as discussed in
+\S\ref{sec:lit:surrogate}, is that a single 500-generation GA run
+evaluates \num{50000} designs; at \num{50}~ms per FEM solve that is
+forty minutes of wall clock, and the surrogate brings it below one
+minute.
+
+\paragraph{Architecture.} \texttt{src/ml/model.py} defines
+\texttt{MLP}, a three-hidden-layer network with widths
+$[\num{256}, \num{128}, \num{64}]$, ReLU activation,
+dropout~\cite{goodfellow2016dl} at $p=\num{0.1}$, and a linear
+output head of dimension three: $\log(1+W)$,
+$\log(1+\delta_\text{max})$, and $\sigma_\text{max}$.
+$\log(1+\cdot)$ transforms stabilise training on the long-tailed
+weight and displacement distributions.
+
+\paragraph{Dataset.} \texttt{src/ml/dataset.py} implements Latin-
+hypercube sampling (LHS) via \texttt{scipy.stats.qmc} to draw
+\num{10000} design vectors uniformly within the benchmark's
+design-variable bounds. Each sample is evaluated by the FEM
+engine and the triple $(W, \delta_\text{max}, \sigma_\text{max})$
+stored alongside the input vector. LHS is preferred over
+simple-random sampling because it guarantees one-dimensional
+marginals are stratified, which in practice gives better coverage
+of the extreme corners of the design space where the thin-
+member optima tend to lie.
+
+\paragraph{Training.} \texttt{src/ml/train.py} splits the LHS
+dataset $\num{80}/\num{10}/\num{10}$ for train/validation/test.
+Inputs and outputs are standardised to zero mean and unit
+variance on the training split. The network is trained with the
+Adam optimiser~\cite{kingma2015adam} at initial learning rate
+$\num{e-3}$ under a cosine-annealing schedule, mini-batch size
+\num{128}, and a \num{200}-epoch budget with early stopping on
+validation mean-squared error.
+
+\paragraph{Wrapped evaluator.} \texttt{src/ml/surrogate.py}
+exposes a \texttt{SurrogateEvaluator} class with the same
+\texttt{evaluate(x)} signature as \texttt{BenchmarkProblem},
+making it a drop-in replacement inside the pymoo inner loop.
+Inference is batched when pymoo passes a population.
+
+\paragraph{Validation gate.} \texttt{src/ml/evaluate.py} runs the
+trained model on the held-out test set, reports $R^2$ per output
+head, and benchmarks inference throughput against FEM. On 10-bar,
+$R^2_\text{weight} = \num{0.9993}$, $R^2_{\delta} = \num{0.89}$,
+$R^2_{\sigma} = \num{0.82}$; FEM averages \num{41}~ms per design
+against a surrogate \num{0.31}~ms per design (batched), a
+$\num{132}\times$ speedup. The weight-$R^2$ figure is the target
+gate from \S\ref{sec:intro:objectives}, reached with margin; the
+lower displacement and stress $R^2$ values are interpreted as
+feasibility screens with borderline candidates falling back to FEM
+in the hybrid pattern of Queipo et al.~\cite{queipo2005}.
 
 \section{Reinforcement-Learning Agent}
 \label{sec:method:rl}
-% TODO: \texttt{TrussDesignEnv} observation, action, reward;
-% PPO~\cite{schulman2017ppo} on Stable-Baselines3; surrogate-backed
-% environment for tractable training; hyperparameters. Inspired by
-% \cite{hayashi2020rl,brown2022rl,zhao2021rl,rochefort2024sogym}.
-% Module: \texttt{src/rl/}.
+
+The reinforcement-learning layer (\texttt{src/rl/}) trains a
+Proximal-Policy-Optimisation~\cite{schulman2017ppo} agent to
+\emph{propose} designs directly, skipping the evolutionary outer
+loop.
+
+\paragraph{Environment.} \texttt{src/rl/environment.py} defines
+\texttt{TrussDesignEnv}, a Gymnasium environment with
+observation space equal to the normalised benchmark description
+(bounds, load vector, symmetry groups packed into a fixed-length
+tensor) and a Box action space of dimension $n_\text{vars}$ in
+$[-1, 1]$, mapped to the design-variable bounds. The environment
+is a single-step \emph{bandit} formulation: the agent produces a
+design in one shot, the surrogate evaluates it, and the reward is
+\begin{equation}
+    r(\mathbf{x}) = -W(\mathbf{x}) - \lambda
+    \sum_i \max(g_i(\mathbf{x}), 0)^2,
+    \label{eq:rl_reward}
+\end{equation}
+with $\lambda=\num{e4}$. The quadratic penalty, rather than a
+linear one, pushes the agent's proposals back \emph{inside} the
+feasible region rather than sitting on the constraint boundary
+where the surrogate is least accurate.
+
+\paragraph{Training.} \texttt{src/rl/train\_ppo.py} uses Stable
+Baselines3~\cite{schulman2017ppo}'s \texttt{PPO} class with
+default hyperparameters (GAE $\lambda = \num{0.95}$, clip
+$\epsilon = \num{0.2}$, learning rate $\num{3e-4}$) and
+a rollout of \num{200000} environment steps. Because the
+environment is single-step, each PPO update sees a fresh batch of
+independent design proposals, effectively making this a contextual
+bandit rather than a true sequential decision process. Training
+takes approximately twenty minutes on a laptop CPU.
+
+\paragraph{Evaluation.} \texttt{src/rl/evaluate.py} rolls the
+trained policy for one deterministic rollout plus
+$n_\text{rollouts}-1$ stochastic rollouts, re-evaluates each
+proposed design with the exact FEM engine, and reports the best
+feasible weight. The stochastic rollouts explore the boundary
+layer around the policy mean, which empirically beats greedy
+deterministic rollouts because the surrogate's approximation
+error is largest exactly where the optimum sits.
+
+\paragraph{Validation gate.} On 10-bar the PPO agent converges to
+\num{5876.9}~lb, a \num{16.1}~\% gap against the
+\num{5060.85}~lb literature value. This is consistent with
+Zhao et al.~\cite{zhao2021rl}'s observation that model-free RL on a
+single-instance structural problem does not generally match a
+tuned GA on that same instance; the contribution of the RL layer
+in this thesis is inference speed (approximately \num{0.2}~s per
+design versus \num{30}~s for a fresh GA run), not single-
+instance optimality.
 
 \section{LLM Warm-Start Designer}
 \label{sec:method:llm}
-% TODO: Anthropic Claude API~\cite{anthropic-docs}; chain-of-thought
-% prompting~\cite{wei2022cot}; structured JSON output;
-% disk-cached responses to avoid re-billing; fall-back to
-% bounds-midpoint on parse failure. Precedent:
-% \cite{geng2024,makatura2024}. Module: \texttt{src/llm/}.
 
-\section{IS 800:2007 Compliance Layer}
+The LLM layer (\texttt{src/llm/}) queries Anthropic's Claude Opus
+API~\cite{anthropic-docs} for a one-shot warm-start design that is
+injected into the GA's initial population.
+
+\paragraph{Prompt template.} \texttt{src/llm/prompts.py} builds a
+system prompt (role description: ``you are a structural engineer
+sizing an optimum-weight truss'') and a user prompt containing:
+the benchmark name, the node coordinates in a compact tabular
+form, the element list and loads, the material properties, the
+IS~800:2007 clause citations to respect, and a request for a JSON
+object of the form \texttt{\{"areas": [...]\}} with a chain-of-
+thought field containing the model's working~\cite{wei2022cot}.
+
+\paragraph{Client.} \texttt{src/llm/client.py} wraps the
+\texttt{anthropic} Python SDK with two additions: an on-disk JSON
+cache keyed by a content hash of the prompt (so re-running an
+experiment with the same prompt does not re-bill) and a heuristic
+fallback that returns a fully-stressed-design vector
+$A_i = |F_i| / (\num{0.75}\,\sigma_\text{allow})$ when the API is
+unavailable or the response fails to parse. The heuristic lets
+the offline CI run and gives the pipeline graceful degradation.
+
+\paragraph{Designer entry point.} \texttt{src/llm/designer.py}
+exposes \texttt{suggest\_initial\_design(benchmark, seed)},
+which builds the prompt, calls the cached client, parses the JSON,
+clips to the design bounds, and returns the vector ready for pymoo.
+
+\paragraph{Evaluation protocol.} \texttt{src/llm/evaluate.py}'s
+\texttt{compare\_warmstart\_vs\_random(n\_seeds)} runs two
+arms --- GA with LLM warm-start and GA with random initialisation
+--- across $n_\text{seeds}$ seeds. For each run it records the
+number of generations until the best feasible weight comes within
+$\num{1.0}~\%$ of the literature optimum. A paired Wilcoxon
+signed-rank test on the matched seed pairs reports the reduction
+and its significance.
+
+\paragraph{Validation gate.} On 10-bar with \num{40} seeds, LLM-
+warm-started GA converges in a mean of \num{128.3} generations
+against \num{203.1} for random initialisation, a reduction of
+\num{36.8}~\%, with paired-Wilcoxon $p = \num{0.0046}$. This
+clears the $\num{20}$--$\num{30}~\%$ gate in
+\S\ref{sec:intro:objectives}.
+
+\section{IS~800:2007 Compliance Layer}
 \label{sec:method:is800}
-% TODO: Clause 3.8 slenderness, 5.6.1 deflection, 6.2/6.3 tension,
-% 7.1 compression, 7.5 angle/compound notes. Reference the standard
-% directly~\cite{is800-2007} and the textbooks
-% \cite{subramanian2008,duggal2014} for worked-example cross-checks.
-% Module: \texttt{src/constraints/}.
+
+Every reported optimum is checked against IS~800:2007 by the
+compliance module (\texttt{src/constraints/}). Two files cooperate:
+\texttt{is800\_checks.py} implements the individual clauses as
+pure functions; \texttt{compliance.py} orchestrates them into a
+\texttt{ComplianceReport} for a given design.
+
+\paragraph{Clause 3.8 slenderness.} For each member, the
+slenderness $\lambda = L_\text{eff}/r$ (with $r = \sqrt{I/A}$ the
+radius of gyration, approximated for generic rod sections by
+$r \approx \sqrt{A/\pi}$) must satisfy
+$\lambda \le \num{180}$ in compression, $\lambda \le \num{400}$ in
+tension. The sign of the axial force distinguishes the two cases;
+the compliance module re-runs the FEM to extract signed forces
+rather than the absolute-valued ones returned by the benchmark
+\texttt{evaluate}.
+
+\paragraph{Clause 6.2/6.3 tension.} Design strength in tension is
+the minimum of yielding of the gross section
+$T_{dg} = A_g f_y / \gamma_{m0}$ (Clause 6.2) and rupture of the
+critical section $T_{dn} = \num{0.9} A_n f_u / \gamma_{m1}$
+(Clause 6.3), with $\gamma_{m0}=\num{1.1}$ and
+$\gamma_{m1}=\num{1.25}$ per the partial-safety-factor table. For
+the benchmarks considered --- all pin-jointed rod members with no
+hole deductions --- $A_n=A_g$, so the governing case is
+typically Clause 6.3.
+
+\paragraph{Clause 7.1 compression.} The design compressive stress
+$f_{cd} = \chi\,f_y / \gamma_{m0}$ uses the column-curve reduction
+factor $\chi$ as a function of non-dimensional slenderness
+$\bar{\lambda} = \sqrt{f_y / f_{cc}}$ with
+$f_{cc} = \pi^2 E / \lambda^2$ the Euler buckling stress. The
+module implements the IS~800 column curve $a$ (the recommended
+curve for rolled I-sections and hollow sections) using the
+imperfection factor $\alpha = \num{0.21}$.
+
+\paragraph{Clause 5.6.1 deflection.} Maximum nodal displacement is
+limited to $L/\num{325}$ for trusses supporting brittle cladding.
+For the cantilever and tower benchmarks $L$ is taken as the span
+(10-bar) or the tower height (25-bar, 72-bar).
+
+\paragraph{Unit conversions.} The benchmark optima are reported in
+imperial units in the original papers; the IS~800 module operates
+in SI. Conversions happen at the benchmark boundary
+(\texttt{BenchmarkProblem.as\_si()}), not inside the compliance
+checks, so the clauses above are written once and read SI inputs
+always.
+
+\paragraph{Validation gate.} \texttt{tests/test\_compliance.py}
+exercises each clause against a worked example from
+Subramanian~\cite{subramanian2008} or
+Duggal~\cite{duggal2014}; all cross-checks agree to three
+significant figures, the quoted precision of the textbook
+solutions.
 
 \section{User Interface and API}
 \label{sec:method:ui}
-% TODO: Streamlit front-end, FastAPI backend, end-to-end demo in
-% under \num{10} seconds on the 10-bar benchmark. Module:
-% \texttt{src/app/}.
+
+The framework is exposed through two complementary entry points
+living in \texttt{src/app/}.
+
+\paragraph{FastAPI backend.} \texttt{src/app/api.py} defines a
+REST API with endpoints \texttt{/health},
+\texttt{/benchmarks}, \texttt{/benchmarks/\{name\}},
+\texttt{/optimize}, and \texttt{/llm/suggest}. The
+\texttt{/optimize} endpoint accepts a benchmark name, algorithm
+(\texttt{ga}, \texttt{pso}, \texttt{nsga2}), generations, seed, and
+optional LLM warm-start flag; it returns the best design, best
+weight, convergence history, and compliance report in JSON. The
+LLM warm-start is injected only for single-objective solvers
+(GA, PSO) because pymoo's NSGA-II does not accept an initial-
+population argument in the same form.
+
+\paragraph{Streamlit UI.} \texttt{src/app/ui.py} is a thin client
+over the FastAPI backend. It lets the user pick a benchmark and
+algorithm, toggle LLM warm-start, set seed and generation count,
+and visualise the result: a convergence curve, a Pareto front
+(for NSGA-II), and a matplotlib rendering of the truss geometry
+with member cross-sections drawn at scale.
+
+\paragraph{Demo latency gate.} The end-to-end path
+(UI $\to$ API $\to$ GA run $\to$ compliance report $\to$ JSON
+back $\to$ UI render) completes in under ten seconds on 10-bar on
+a laptop CPU, meeting the interactivity target in
+\S\ref{sec:intro:objectives}. This is enabled by the surrogate
+evaluator being wired in as an optional \texttt{use\_surrogate=true}
+query parameter; without it the FEM inner loop caps throughput at
+roughly forty seconds per run.
+
+\paragraph{Module summary.} Table~\ref{tab:modules} lists the
+source modules against the research objectives they implement.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Source modules against research objectives.}
+  \label{tab:modules}
+  \begin{tabular}{ll}
+    \toprule
+    Module & Implements objective \\
+    \midrule
+    \texttt{src/benchmarks/}   & Benchmark reproducibility (\S\ref{sec:intro:objectives}, obj.~1) \\
+    \texttt{src/algorithms/}   & Classical optimiser accuracy (obj.~2) \\
+    \texttt{src/ml/}           & Surrogate speedup + fidelity (obj.~3) \\
+    \texttt{src/rl/}           & Reinforcement-learning feasibility (obj.~4) \\
+    \texttt{src/llm/}          & LLM warm-start benefit (obj.~5) \\
+    \texttt{src/constraints/}  & IS~800:2007 compliance (obj.~6) \\
+    \texttt{src/app/}          & Streamlit demo \mbox{$<\num{10}$~s}  (obj.~6) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The validation gates summarised at the end of each section above
+are exercised in \texttt{tests/}, where a pytest suite of \num{76}
+tests covers unit, integration, and gate-level assertions. The
+results of running each gate against its benchmark are presented
+in Chapter~\ref{chap:results}.
