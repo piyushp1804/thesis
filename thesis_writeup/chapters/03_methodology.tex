@@ -623,7 +623,215 @@ source modules against the research objectives they implement.
 \end{table}
 
 The validation gates summarised at the end of each section above
-are exercised in \texttt{tests/}, where a pytest suite of \num{76}
+are exercised in \texttt{tests/}, where a pytest suite of \num{81}
 tests covers unit, integration, and gate-level assertions. The
 results of running each gate against its benchmark are presented
 in Chapter~\ref{chap:results}.
+
+\section{Consolidated Pseudocode and Hyperparameter Reference}
+\label{sec:method:pseudocode}
+
+The previous sections describe each algorithm in prose. For
+reviewers who prefer line-by-line control flow and for reproducing
+parameter choices in other implementations, this section
+consolidates the five stochastic algorithms into compact
+pseudocode blocks and tabulates every free hyperparameter in a
+single place (\cref{tab:method:hparams}). The pseudocode is a
+faithful rendering of the code in \texttt{src/algorithms/},
+\texttt{src/rl/}, and \texttt{src/llm/}; no cosmetic
+simplifications.
+
+\subsection{Genetic Algorithm}
+\label{sec:method:pseudocode:ga}
+
+\begin{algorithm}[H]
+\small
+\caption{Genetic Algorithm for truss sizing (\texttt{src/algorithms/ga.py})}
+\label{alg:ga}
+\begin{algorithmic}[1]
+\Require benchmark $\mathcal{B}$, seed $s$, population size
+  $N$, generation budget $G$, warm-start $\mathbf{x}_0$ (optional)
+\Ensure best feasible area vector $\mathbf{a}^\star$ and weight $W^\star$
+\State seed RNGs: \texttt{np.random.seed}$(s)$; \texttt{random.seed}$(s)$
+\State $\mathcal{P}_0 \gets \text{LHS}(\mathcal{B}.\text{bounds},N)$
+\If{$\mathbf{x}_0$ supplied}
+  \State $\mathcal{P}_0[0] \gets \mathbf{x}_0$ \Comment{LLM warm-start replaces one individual}
+\EndIf
+\For{$t=0,\dotsc,G-1$}
+  \State evaluate $\mathcal{P}_t$: compute $(W,\mathbf{g})$ via FEM + IS~800 checker
+  \State rank by feasibility-first: feasible$\succ$infeasible; within each group, min $W$ (or min $\|\mathbf{g}\|_+$)
+  \State $\mathcal{P}_t' \gets$ tournament-select $N$ parents of size $2$
+  \State offspring $\gets$ SBX crossover ($p_c=\num{0.9}$, $\eta_c=\num{15}$)
+  \State offspring $\gets$ polynomial mutation ($p_m=1/n_{\mathrm{dv}}$, $\eta_m=\num{20}$)
+  \State $\mathcal{P}_{t+1}\gets$ elitist merge($\mathcal{P}_t$, offspring), keep top-$N$
+\EndFor
+\State \Return best feasible from $\mathcal{P}_G$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Particle Swarm Optimisation}
+\label{sec:method:pseudocode:pso}
+
+\begin{algorithm}[H]
+\small
+\caption{Particle Swarm Optimisation for truss sizing (\texttt{src/algorithms/pso.py})}
+\label{alg:pso}
+\begin{algorithmic}[1]
+\Require benchmark $\mathcal{B}$, seed $s$, swarm size $N$, generation budget $G$,
+  inertia schedule $w_0\!\to\!w_G$, cognitive $c_1$, social $c_2$
+\State seed RNGs; $\mathbf{x}_i\gets\text{LHS}(\mathcal{B}.\text{bounds})$, $\mathbf{v}_i\gets\mathbf{0}$, $i=1..N$
+\State $\mathbf{p}_i\gets\mathbf{x}_i$; $\mathbf{g}\gets\operatorname{argmin}_i\ \text{evaluate}(\mathbf{x}_i)$
+\For{$t=0,\dotsc,G-1$}
+  \State $w\gets w_0 + (w_G-w_0)\cdot t/G$
+  \For{$i=1,\dotsc,N$}
+    \State $r_1,r_2\sim\mathcal{U}[0,1]^{n_{\mathrm{dv}}}$
+    \State $\mathbf{v}_i\gets w\mathbf{v}_i
+      + c_1 r_1(\mathbf{p}_i-\mathbf{x}_i)
+      + c_2 r_2(\mathbf{g}-\mathbf{x}_i)$
+    \State $\mathbf{x}_i\gets\operatorname{clip}(\mathbf{x}_i+\mathbf{v}_i,\mathcal{B}.\text{bounds})$
+    \State evaluate $\mathbf{x}_i$; update $\mathbf{p}_i$ if strictly better and feasibility-consistent
+  \EndFor
+  \State $\mathbf{g}\gets\operatorname{argmin}_i$ (feasibility-first, then $W$)
+\EndFor
+\State \Return $\mathbf{g}$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{NSGA-II}
+\label{sec:method:pseudocode:nsga2}
+
+\begin{algorithm}[H]
+\small
+\caption{NSGA-II for weight-vs-displacement Pareto front
+  (\texttt{src/algorithms/nsga2.py})}
+\label{alg:nsga2}
+\begin{algorithmic}[1]
+\Require benchmark $\mathcal{B}$, seed $s$, population $N$, generations $G$
+\State seed RNGs; $\mathcal{P}_0\gets$ LHS of size $N$
+\For{$t=0,\dotsc,G-1$}
+  \State evaluate $\mathcal{P}_t$: objectives $(W, u_{\max})$; constraints $\mathbf{g}$
+  \State $\mathcal{F}_1,\mathcal{F}_2,\dots\gets$ fast-non-dominated-sort$(\mathcal{P}_t)$
+  \State crowding-distance rank within each front
+  \State parents $\gets$ binary tournament by (rank$\downarrow$, crowding$\uparrow$)
+  \State offspring $\gets$ SBX+polynomial mutation as in Alg.~\ref{alg:ga}
+  \State $\mathcal{P}_{t+1}\gets$ merge $\mathcal{P}_t\cup$ offspring; sort; truncate to $N$
+\EndFor
+\State \Return front $\mathcal{F}_1$ of $\mathcal{P}_G$ (Pareto-optimal set)
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Reinforcement-Learning Agent}
+\label{sec:method:pseudocode:rl}
+
+\begin{algorithm}[H]
+\small
+\caption{PPO truss-sizing agent (\texttt{src/rl/train.py})}
+\label{alg:rl}
+\begin{algorithmic}[1]
+\Require benchmark $\mathcal{B}$, total timesteps $T$, policy
+  network $\pi_\theta$, value network $V_\phi$, roll-out length
+  $T_r$, clip range $\epsilon$, learning rate $\alpha$
+\State initialise $\theta,\phi$; create $\mathcal{B}$-backed Gym environment
+\For{$t=0,\dotsc,T/T_r-1$}
+  \State collect a $T_r$-step rollout under $\pi_{\theta_{\mathrm{old}}}$
+  \State compute advantages $\hat A_t$ via GAE($\lambda=\num{0.95}$, $\gamma=\num{0.99}$)
+  \For{$k=1,\dotsc,K_{\mathrm{epoch}}$}
+    \State sample mini-batch of transitions
+    \State loss $\gets -\mathbb{E}[\min(r_t\hat A_t, \operatorname{clip}(r_t,1\pm\epsilon)\hat A_t)] + c_v \cdot \|V_\phi-V^{\mathrm{target}}\|^2 + c_H \mathcal{H}(\pi_\theta)$
+    \State Adam step with lr~$\alpha$
+  \EndFor
+\EndFor
+\State \Return greedy rollout with $\pi_\theta$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{LLM Warm-Start Designer}
+\label{sec:method:pseudocode:llm}
+
+\begin{algorithm}[H]
+\small
+\caption{LLM warm-start (\texttt{src/llm/warmstart.py})}
+\label{alg:llm}
+\begin{algorithmic}[1]
+\Require benchmark $\mathcal{B}$, model endpoint $\mathcal{M}$, cache
+  file $\mathcal{C}$, optional query index $q$
+\State construct prompt $P$ from $\mathcal{B}.\text{name}$,
+  $\mathcal{B}.\text{geometry}$, $\mathcal{B}.\text{loads}$,
+  $\mathcal{B}.\text{limits}$
+\If{$\mathcal{C}[q]$ exists}
+  \State response $\gets\mathcal{C}[q]$ \Comment{deterministic replay}
+\Else
+  \State response $\gets\mathcal{M}(P,$ temp$=\num{0.2})$
+  \State append (P, response) to $\mathcal{C}$
+\EndIf
+\State parse response $\to$ area vector $\mathbf{a}_{\mathrm{llm}}$ and confidence $c$
+\State \Return $\mathbf{a}_{\mathrm{llm}},c$ to caller (seeds GA/PSO)
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Hyperparameter Summary}
+\label{sec:method:hparams}
+
+\begin{table}[h]
+  \centering
+  \small
+  \caption{Complete hyperparameter reference for every stochastic
+    algorithm in this thesis. Values that adapt per-benchmark are
+    noted; the unadapted ones are the same across 10-, 25-, 72-,
+    and 200-bar runs.}
+  \label{tab:method:hparams}
+  \begin{tabular}{@{}l l l@{}}
+    \toprule
+    Algorithm & Parameter & Value \\
+    \midrule
+    \multirow{7}{*}{GA}
+      & population size $N$                 & \num{100} \\
+      & generations $G$                     & \num{500} (\num{800} for 200-bar) \\
+      & SBX distribution index $\eta_c$     & \num{15} \\
+      & SBX probability $p_c$               & \num{0.9} \\
+      & polynomial mutation $\eta_m$        & \num{20} \\
+      & mutation probability $p_m$          & $1/n_{\mathrm{dv}}$ \\
+      & tournament size                     & \num{2} \\
+    \midrule
+    \multirow{4}{*}{PSO}
+      & swarm size $N$                      & \num{100} \\
+      & generations $G$                     & \num{500} (\num{800} for 200-bar) \\
+      & inertia schedule $w$                & $\num{0.9}\to\num{0.4}$ \\
+      & $c_1$, $c_2$                        & \num{2.0}, \num{2.0} \\
+    \midrule
+    \multirow{2}{*}{NSGA-II}
+      & \multicolumn{2}{l}{Same SBX/polynomial settings as GA} \\
+      & archive size                        & $N=\num{100}$ \\
+    \midrule
+    \multirow{6}{*}{RL (PPO)}
+      & total timesteps $T$                 & \num{1e6} \\
+      & rollout length $T_r$                & \num{2048} \\
+      & mini-batch size                     & \num{64} \\
+      & learning rate $\alpha$              & \num{3e-4} \\
+      & clip range $\epsilon$               & \num{0.2} \\
+      & $\gamma$, $\lambda$ (GAE)           & \num{0.99}, \num{0.95} \\
+    \midrule
+    \multirow{5}{*}{Surrogate (MLP)}
+      & dataset size                        & \num{2000} LHS samples \\
+      & architecture                        & \num{3} hidden layers, 128 units \\
+      & activation                          & ReLU \\
+      & optimiser / lr                      & Adam / \num{1e-3} \\
+      & epochs                              & \num{300} (early-stop $\Delta<\num{1e-5}$) \\
+    \midrule
+    \multirow{4}{*}{LLM warm-start}
+      & model                               & Claude Opus 4.7 \\
+      & temperature                         & \num{0.2} \\
+      & queries per benchmark               & \num{30} \\
+      & max tokens per response             & \num{2048} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+These values are stored in
+\texttt{src/algorithms/config.py},
+\texttt{src/rl/train.py}'s argparse defaults,
+\texttt{src/ml/train\_mlp.py},
+and \texttt{src/llm/warmstart.py}, and are overridable per-call
+by CLI flags (\cref{app:repro:flags}) without recompilation.
+Any change to these defaults is logged in the stamped run
+pickle's \texttt{config} field for post-hoc audit.
