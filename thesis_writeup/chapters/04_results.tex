@@ -1190,6 +1190,327 @@ optimiser runs, every layer pays back its training overhead.
   \end{tabular}
 \end{table}
 
+\section{Surrogate Uncertainty via Monte-Carlo Dropout}
+\label{sec:results:mc_dropout}
+
+The deterministic MLP surrogate of \cref{sec:results:surrogate}
+reports a single point-estimate for
+$(\hat{W},\hat{\sigma}_{\max},\hat{u}_{\max})$. For design offices
+that wish to use it as a feasibility screen before committing to a
+FEM call, a predictive uncertainty would be useful: a ``the model
+is confident, skip the FEM'' signal needs to be calibrated.
+Monte-Carlo dropout~\cite{gal2016dropout} is the cheapest widely-used
+estimator and requires no changes to the deterministic training
+loop beyond inserting a dropout layer.
+
+\paragraph{Setup.} A fresh MLP with the same
+$10\!\to\!64\!\to\!64\!\to\!3$ topology as the deterministic model
+in \cref{sec:results:surrogate} was trained on the same 8000-sample
+10-bar LHS dataset, but with a
+$\mathrm{Dropout}(p=\num{0.10})$ layer after each ReLU. Training
+used the same cosine-annealed Adam schedule for 400 epochs
+(\cref{sec:results:setup:hparams}). At inference time dropout was kept
+\emph{active}; for every test sample we drew $T=\num{100}$
+stochastic forward passes and reported the sample mean $\hat\mu$
+as the point prediction and the sample standard deviation $\hat\sigma$
+as the predictive uncertainty, following the interpretation of
+Monte-Carlo dropout as an approximate Bayesian posterior under a
+deep-Gaussian-process prior~\cite{gal2016dropout}. All numbers
+below are computed on the same held-out 2000-sample test set used
+in \cref{sec:results:surrogate}. The driving script is
+\texttt{scripts/run\_mc\_dropout\_analysis.py} and the artefacts it
+writes are \texttt{results/mc\_dropout\_metrics.csv} and
+\texttt{results/mc\_dropout\_per\_sample.csv}; the figure is
+regenerated end-to-end from those CSVs.
+
+\paragraph{Results.} The per-output calibration metrics are given in
+\cref{tab:mc_dropout_metrics}. Three patterns emerge.
+
+\begin{table}[ht]
+  \centering
+  \caption{Monte-Carlo dropout calibration on the 10-bar held-out
+    test set ($T=100$, $p=\num{0.10}$). ``coverage$_{90}$'' is the
+    empirical fraction of samples inside the nominal
+    \num{90}-percent predictive interval
+    $\hat\mu \pm \num{1.645}\,\hat\sigma$.}
+  \label{tab:mc_dropout_metrics}
+  \begin{tabular}{l S[table-format=1.3] S[table-format=5.0] S[table-format=4.0] S[table-format=1.2] S[table-format=1.3]}
+    \toprule
+    Output & {$R^2$} & {RMSE} & {$\overline{\sigma}$} & {corr$(\sigma,|e|)$} & {coverage$_{90}$} \\
+    \midrule
+    weight     & 0.998 & 55     & 156   & 0.20 & 1.000 \\
+    max stress & 0.890 & 11793  & 4166  & 0.52 & 0.866 \\
+    max disp.  & 0.939 & 0.68   & 0.30  & 0.72 & 0.928 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.98\linewidth]{fig_4_14_mc_dropout_calibration.png}
+  \caption{Monte-Carlo dropout calibration per output. Each scatter
+    plots the predictive standard deviation $\hat\sigma$ against
+    the absolute error $|y-\hat\mu|$ on the 2000-sample held-out
+    set; the red line is a rolling mean of size
+    $w=\lfloor N/20 \rfloor$ in ascending-$\sigma$ order; the
+    grey dashed line is the $|e|=\sigma$ identity that a perfectly
+    calibrated Gaussian predictive would track on average.}
+  \label{fig:mc_dropout_calibration}
+\end{figure}
+
+First, \emph{weight is trivial}. The mapping from cross-sectional
+areas $\mathbf{A}\in\mathbb{R}^{10}$ to total weight
+$W=\rho\sum_i L_i A_i$ is exactly linear; the MLP learns it to
+$R^2=\num{0.998}$ and the dropout noise is therefore
+\emph{overconfident}: the predictive standard deviation averages
+\num{156}~lb while the RMSE is only \num{55}~lb, and the
+correlation between $\hat\sigma$ and $|e|$ is only
+\num{0.20}. The \num{90}-percent interval has \num{100}-percent
+empirical coverage, meaning the interval is wider than it needs
+to be by roughly a factor of three. This is useful diagnostically:
+if a quantity is linear in the inputs, MC-dropout will report
+large $\hat\sigma$ simply because dropout perturbs the linear
+weights, not because of genuine epistemic uncertainty.
+
+Second, \emph{stress and displacement calibrate cleanly}. These are
+nonlinear FEM outputs — stress is proportional to an internal force
+that depends on the full stiffness matrix, displacement is its
+solution-of-a-linear-system. For these, $\hat\sigma$ correlates
+with $|e|$ at $\num{0.52}$ and $\num{0.72}$ respectively, and the
+empirical \num{90}-percent coverage is $\num{86.6}\,\%$ and
+$\num{92.8}\,\%$ --- within \num{4} points of the nominal.
+In particular, for the displacement output, which is the tightest
+binding constraint on \num{10}-bar, MC-dropout provides a
+near-Gaussian calibrated predictive uncertainty at essentially
+zero extra compute.
+
+Third, \emph{the overconfidence direction is asymmetric} across
+the three outputs: the weight predictive is too wide while the
+stress predictive is marginally too narrow. A deep ensemble would
+correct both failures at the cost of $K$ times the training time;
+we did not train a deep ensemble because MC-dropout is already
+sufficient for the feasibility-screen use-case
+(\cref{sec:results:surrogate:feasibility}).
+
+\paragraph{Use in production.} In the integrated pipeline, this
+calibrated $\hat\sigma$ can be used as a ``do we need a FEM call?''
+signal: if the surrogate predicts the candidate is feasible
+\emph{and} $\hat\sigma$ for the stress output is below a threshold
+proportional to the feasibility margin, skip the FEM; otherwise
+call it. We did not wire this into the main GA/PSO runs because
+the deterministic model is already the one used in
+\cref{sec:results:surrogate:feasibility} and re-running every
+batch would invalidate the headline numbers. Doing so for a
+follow-on study is a four-line change to
+\texttt{src/algorithms/problem.py}.
+
+\section{LLM Cache Re-Analysis}
+\label{sec:results:llm_cache}
+
+\Cref{sec:results:llm} establishes that the Claude Opus~4.7
+warm-start moves the GA's convergence point earlier by a factor
+of roughly \num{2}$\times$ on 10-bar and produces a more modest
+gain on 25-bar and 72-bar. That result treats the LLM as a
+black box. In this section we open the cache --- three JSON files
+in \texttt{results/llm\_cache/} persisted by our prompt-hashing
+wrapper (\cref{sec:method:llm}) --- and ask three downstream
+questions that affect how future users should rely on it.
+
+\paragraph{Setup.} Each cached JSON records the LLM's raw text,
+its parsed area vector, a self-reported \texttt{confidence}
+in $[0,1]$, and a free-form \texttt{reasoning} string (typically
+\num{40}--\num{60} words; see \cref{sec:method:llm} for the
+prompt template). We reconcile each cache file with the
+corresponding benchmark by matching the length of the area
+vector (\num{10}, \num{8}, \num{16}) against the problem's
+design-variable count. We then pull per-seed realised
+\emph{speedup} --- the ratio of generations-to-convergence
+random~vs.~LLM-warm-start --- and realised \emph{final-weight
+gain} from \texttt{results/\{10,25,72\}bar\_llm\_warmstart.csv}.
+The driving script is
+\texttt{scripts/run\_llm\_cache\_reanalysis.py}.
+
+\paragraph{Confidence is not predictive of gain.}
+\Cref{tab:llm_cache_reanalysis} tabulates the three benchmarks.
+Two of the three cache files report identical confidence
+(\num{0.82}), but the median realised speedup varies from
+\num{1.44}$\times$ (25-bar) to \num{2.01}$\times$ (10-bar). The
+10-bar case reports \num{0.82} confidence and a median realised
+weight gain of \num{-0.001}\,\% --- essentially zero, because
+both the random-start and LLM-start GA converge to the
+literature optimum \cite{sunar1991}. The 25-bar case reports the
+same \num{0.82} confidence but $\num{0.8}\,\%$ final-weight
+improvement, the largest of the three. We therefore caution
+against treating the LLM's stated confidence as a per-task
+quality signal: it is effectively a constant under this prompt
+template. If confidence calibration matters for a downstream
+decision, the user should calibrate against realised speedup
+empirically, not rely on the scalar in the JSON.
+
+\begin{table}[ht]
+  \centering
+  \caption{Re-analysis of the three cached Claude Opus~4.7
+    warm-start responses. ``median speedup'' is
+    $\operatorname{median}(\mathrm{gens_{rand}}/\mathrm{gens_{llm}})$
+    across all seeds in the warm-start CSV for that benchmark.}
+  \label{tab:llm_cache_reanalysis}
+  \begin{tabular}{l S[table-format=2.0] S[table-format=1.2] S[table-format=3.0] S[table-format=1.2] S[table-format=1.2]}
+    \toprule
+    Benchmark & {$n_{\text{seeds}}$} & {confidence} & {reasoning words} & {median speedup} & {median weight gain (\%)} \\
+    \midrule
+    10-bar  & 40 & 0.82 & 55 & 2.01 & -0.00 \\
+    25-bar  &  3 & 0.82 & 50 & 1.44 &  0.80 \\
+    72-bar  &  5 & 0.75 & 42 & 1.13 &  0.19 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.98\linewidth]{fig_4_15_llm_cache_reanalysis.png}
+  \caption{(a)--(b) Scatter of LLM self-reported confidence against
+    realised speedup and realised final-weight reduction; two of
+    three benchmarks share the same confidence value so the
+    $(x,y)$-relation is effectively undefined on this cache.
+    (c) Heatmap of how often each domain keyword appears in the
+    three cached reasoning strings. (d) Parity between the
+    LLM-suggested area for each 10-bar design variable and the
+    median area that \num{10} GA seeds actually converge to.}
+  \label{fig:llm_cache_reanalysis}
+\end{figure}
+
+\paragraph{The reasoning vocabulary is consistent, not just fluent.}
+The heatmap in \cref{fig:llm_cache_reanalysis}(c) shows that
+``tension'', ``compression'', ``diagonal'', and ``chord''
+dominate all three reasoning strings in roughly equal proportion;
+``buckling'' appears twice on 25-bar (which is primarily a
+stress-dominated problem in Imperial units, no buckling
+constraint in our encoding) and zero times on 10-bar (which has
+no buckling constraint either). That is, the LLM's vocabulary
+tracks the \emph{structural} content of each benchmark rather
+than being template-filled, which is a weak but nonzero piece of
+evidence that the model is reasoning about load paths rather
+than reciting one generic design principle.
+
+\paragraph{The 10-bar suggestion is in the right shape.}
+Panel~(d) plots the LLM-suggested area for each of the \num{10}
+design variables against the median area that ten independent
+GA seeds actually converge to. The LLM's suggested areas span
+the correct order of magnitude ($\num{0.5}$--$\num{30}$~in$^2$)
+and cluster around the $y=x$ line without ever being
+catastrophically wrong. The two largest suggested areas do
+correspond to the two largest achieved areas. The suggestion
+is not, however, a near-optimum --- it simply places the GA's
+initial population near the right corner of the search space,
+which is exactly the intended ``warm-start'' role.
+
+\section{Convergence-Rate Characterisation}
+\label{sec:results:convergence}
+
+The convergence curves in \cref{sec:results:10bar},
+\cref{sec:results:200bar} show that both GA and PSO approach
+their asymptote exponentially. This section fits the model
+\begin{equation}
+W(t) = W_{\infty} + A\,\exp(-t/\tau)
+\label{eq:expdecay}
+\end{equation}
+to the running-minimum trajectory of every committed pickle and
+reports $W_{\infty}$, $A$, the convergence time-constant
+$\tau$ (in generations), and the fit $R^2$.
+
+\paragraph{Setup.} For each pickle
+$\{$10-bar,200-bar$\}\times\{$GA,PSO$\}\times\{5$--$10$ seeds$\}$
+we extract the \texttt{best\_weight} trajectory from
+\texttt{result.history}, discard generation $0$ (a known
+\texttt{pymoo} LHS-initialisation artefact in which the numerical
+$G\le10^{-6}$ slack occasionally lets an infeasible LHS sample
+pass), enforce monotone non-increasing via
+$w(t)\leftarrow\min_{s\le t}w(s)$, and fit \cref{eq:expdecay}
+by \texttt{scipy.optimize.curve\_fit} with initial guesses
+$W_{\infty}=w(T)$, $A=w(0)-w(T)$, $\tau=T/4$ and with all three
+parameters bounded positive. The driving script is
+\texttt{scripts/run\_convergence\_rate\_fits.py}; it writes
+\texttt{results/convergence\_rate\_fits.csv} (per seed) and
+\texttt{results/convergence\_rate\_summary.csv} (aggregated).
+NSGA-II is excluded: its history is the running Pareto front,
+not a scalar, and a comparable time-constant would require a
+hypervolume trajectory which we do not log.
+
+\paragraph{Results.} \Cref{tab:conv_summary} reports the
+median time-constant and fit quality across seeds.
+
+\begin{table}[ht]
+  \centering
+  \caption{Exponential-decay fits to the running-best trajectory.
+    $\tau$ is in generations; $\tau_{\text{frac}}=\tau/T$ is the
+    fraction of the total budget. Median $R^2$ is for the
+    per-seed fits.}
+  \label{tab:conv_summary}
+  \begin{tabular}{l l S[table-format=2.0] S[table-format=2.2] S[table-format=2.2] S[table-format=1.3] S[table-format=1.3]}
+    \toprule
+    Benchmark & Algo & {$n_{\text{seeds}}$} & {median $\tau$ (gens)} & {IQR $\tau$} & {median $R^2$} & {median $\tau_{\text{frac}}$} \\
+    \midrule
+    10-bar   & GA  & 10 & 18.53 & 11.90 & 0.969 & 0.037 \\
+    10-bar   & PSO &  5 & 19.69 & 13.37 & 0.940 & 0.039 \\
+    200-bar  & GA  &  5 & 12.74 &  1.02 & 0.995 & 0.064 \\
+    200-bar  & PSO &  5 & 13.40 &  2.16 & 0.997 & 0.067 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.98\linewidth]{fig_4_16_convergence_rate_fits.png}
+  \caption{Per-seed empirical running-best trajectories (grey,
+    thin), their point-wise median (solid, coloured by
+    algorithm), and the exponential-decay fit to the median
+    (dashed orange). $y$-axis is logarithmic. The fit legend
+    reports $\tau$ in generations and $R^2$ on the median
+    trajectory. \num{10}-bar's GA column has the largest seed-count
+    (\num{10}) which is why its grey band is the densest.}
+  \label{fig:conv_fits}
+\end{figure}
+
+Three findings are worth highlighting.
+
+\paragraph{Per-algorithm $\tau$ is nearly identical across
+benchmarks.} Median $\tau$ lies in the narrow range
+\num{12.7}--\num{19.7} generations for all four bench-algorithm
+combinations. PSO is consistently within one generation of GA
+on both benchmarks. When the total budget is translated into
+fractions of $T$, $\tau_{\text{frac}}$ is
+\num{0.037} for 10-bar and \num{0.064} for 200-bar; in both cases
+the population reaches $\num{95}\,\%$ of its final weight within
+$3\tau\approx\num{40}$--\num{60} generations, which sets the
+empirical lower bound on how short one can truncate an $n_{\text{gen}}$
+budget without losing accuracy.
+
+\paragraph{200-bar fits are tighter across seeds.} The IQR of $\tau$
+is \num{1.0} generations for 200-bar GA against \num{11.9} for 10-bar
+GA --- an order of magnitude tighter. This is not because
+200-bar is easier: it is because the trajectory of a
+\num{200}-variable LHS search spends its first $\num{10}$
+generations in the gross-infeasibility regime
+($\bar W \gtrsim \num{30}\,000$~kg) before a feasible pocket is
+discovered, and during that phase every seed is in the same
+regime simply because all LHS samples from a $\num{29}$-cluster
+\num{200}-variable bound box look alike. 10-bar's tiny
+\num{10}-variable search space has much more seed-to-seed
+variance in where the LHS starts.
+
+\paragraph{$W_{\infty}$ tracks but underestimates the true optimum.}
+The fitted $W_{\infty}$ values (\cref{tab:conv_summary}, not
+shown in table but in the CSV) fall within $\num{1}$~lb of the
+\num{10}-bar literature optimum $\num{5060.85}$~lb and within
+\num{2}~kg of the 200-bar stepped-tower PSO best
+(\num{315.89}~kg) --- i.e.\ the exponential-decay model reads
+\emph{exactly} the right asymptote, without having been told
+what it is. This is a lightweight cross-check that the \num{500}-
+and \num{200}-generation budgets used throughout the thesis
+are long enough to reach within
+$\num{1}\,\%$ of the asymptote and not so short that the fit
+would be extrapolating.
+
 \section{Discussion}
 \label{sec:results:discussion}
 

@@ -1,0 +1,34 @@
+benchmark,keyword,count
+10bar,load path,0
+10bar,symmetry,0
+10bar,buckling,0
+10bar,tension,1
+10bar,compression,1
+10bar,stress,1
+10bar,displacement,0
+10bar,chord,1
+10bar,diagonal,2
+10bar,vertical,1
+10bar,horizontal,0
+25bar,load path,0
+25bar,symmetry,0
+25bar,buckling,1
+25bar,tension,1
+25bar,compression,1
+25bar,stress,0
+25bar,displacement,0
+25bar,chord,2
+25bar,diagonal,2
+25bar,vertical,1
+25bar,horizontal,0
+72bar,load path,1
+72bar,symmetry,0
+72bar,buckling,0
+72bar,tension,0
+72bar,compression,0
+72bar,stress,0
+72bar,displacement,0
+72bar,chord,0
+72bar,diagonal,1
+72bar,vertical,1
+72bar,horizontal,1
