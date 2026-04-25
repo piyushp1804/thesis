@@ -1,8 +1,33 @@
 # Thesis project — handoff brief
 
-**Last updated:** 2026-04-24 (Phase 8a in progress: Ch 1, 2, 3 drafted)
+**Last updated:** 2026-04-25 (Phase 10 complete: 125-page thesis tagged `phase-10-complete`)
 
 Read this file first in any new chat. It is the complete pick-up point.
+
+## Phase 10 status (what was just completed)
+
+- **Day 1** (commit `cc0ea48`): three new Ch 4 sections written from
+  existing artefacts only (no new batches, no new API calls):
+  §4.14 MC-dropout surrogate uncertainty, §4.15 LLM cache
+  re-analysis, §4.16 convergence-rate exponential fits. +7 pp.
+  New scripts: `run_mc_dropout_analysis.py`,
+  `run_llm_cache_reanalysis.py`, `run_convergence_rate_fits.py`.
+- **Days 2–3 + first Day-4 task** (commit `a0dbc9b`): four new
+  appendices. App. A FEM derivation from first principles
+  (~10 pp), App. B IS 800:2007 clauses in code-of-practice form
+  (~8 pp), App. C geometry/loading/limits tables for all four
+  benchmarks (~8 pp), App. D reproducibility (~6 pp). +32 pp.
+- **Day 4** (commit `9104ef8`): Ch 3 §3.10 consolidated
+  pseudocode blocks (GA, PSO, NSGA-II, PPO, LLM warm-start) +
+  single hyperparameter reference table. Bibliography expanded
+  from 44 to 89 entries with verified published references
+  across classical sizing, metaheuristics, MOO, surrogates,
+  deep learning, RL, LLMs, code-of-practice, FEM. +7 pp.
+- **Build:** 79 → **125 pages**, 27 figures, 0 undefined
+  references, 113 in-text cite marks. Compiled cleanly with
+  Tectonic 0.16.9; MacTeX-compatible (preamble uses
+  `biblatex` with `backend=bibtex` for maximum portability).
+- **Tag:** `phase-10-complete` on branch `main`.
 
 ---
 
