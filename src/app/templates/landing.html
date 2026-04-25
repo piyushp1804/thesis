@@ -3,207 +3,359 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>AI-Powered Steel Truss Optimization — M.Tech Thesis</title>
+<title>AI-Powered Steel Truss Optimization — Aryan · IIT (BHU) Varanasi</title>
+<meta name="description" content="M.Tech / IDD thesis of Aryan (Roll 21064030), Department of Civil Engineering, IIT (BHU) Varanasi. LLM-warm-started metaheuristics for structural truss optimisation under IS 800:2007."/>
+<link rel="preconnect" href="https://rsms.me/"/>
+<link rel="stylesheet" href="https://rsms.me/inter/inter.css"/>
 <style>
   :root {
     color-scheme: dark;
-    --bg: #0b0d12;
-    --bg-1: #12151d;
-    --bg-2: #171b25;
-    --border: #242a38;
-    --text: #e7e9ee;
-    --muted: #8893ac;
-    --accent: #7aa7ff;
-    --accent-2: #89f0b7;
-    --warn: #f7c78c;
-    --danger: #ff8c9e;
+    --bg: #050608;
+    --bg-1: #0c0f14;
+    --bg-2: #11151d;
+    --bg-3: #161b25;
+    --border: #1f2533;
+    --border-2: #2a3142;
+    --text: #f2f4f8;
+    --muted: #8890a6;
+    --accent: #3d7bff;
+    --accent-2: #18b984;
+    --warn: #e5a84f;
+    --danger: #ff8494;
+    --ring: rgba(61,123,255,0.45);
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+  html { scroll-behavior: smooth; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter,
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
       system-ui, sans-serif;
+    font-feature-settings: "cv11","ss01","ss03";
     line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
   a { color: var(--accent); text-decoration: none; }
-  a:hover { color: #b3cbff; text-decoration: underline; }
+  a:hover { color: #8db0ff; }
   .wrap { max-width: 1120px; margin: 0 auto; padding: 0 1.5rem; }
+  .tight { max-width: 880px; margin: 0 auto; padding: 0 1.5rem; }
+  .mono { font-family: "SF Mono", ui-monospace, Menlo, monospace; }
+
+  /* ---------- sticky nav ---------- */
+  nav.top {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: saturate(160%) blur(14px);
+    background: rgba(5,6,8,0.72);
+    border-bottom: 1px solid var(--border);
+  }
+  nav.top .row {
+    display: flex; align-items: center; justify-content: space-between;
+    max-width: 1120px; margin: 0 auto; padding: 0.8rem 1.5rem;
+  }
+  nav.top .brand { font-weight: 700; letter-spacing: -0.01em; color: var(--text); }
+  nav.top .brand .dim { color: var(--muted); font-weight: 500; }
+  nav.top .links { display: flex; gap: 1.4rem; flex-wrap: wrap; }
+  nav.top .links a {
+    color: var(--muted); font-size: 0.91rem; font-weight: 500;
+    transition: color 0.15s;
+  }
+  nav.top .links a:hover { color: var(--text); }
+  nav.top .cta {
+    background: var(--accent); color: #fff; padding: 7px 13px;
+    border-radius: 999px; font-weight: 600; font-size: 0.86rem;
+  }
+  nav.top .cta:hover { background: #5a90ff; color: #fff; }
 
   /* ---------- hero ---------- */
   .hero {
-    padding: 4rem 0 2.6rem;
+    position: relative; overflow: hidden;
+    padding: 7rem 0 5rem;
     background:
-      radial-gradient(60rem 30rem at 20% -10%, rgba(122,167,255,0.18), transparent 60%),
-      radial-gradient(60rem 30rem at 90% 10%, rgba(137,240,183,0.10), transparent 60%),
+      radial-gradient(60rem 34rem at 18% -8%, rgba(61,123,255,0.22), transparent 60%),
+      radial-gradient(56rem 32rem at 90% 0%, rgba(24,185,132,0.14), transparent 60%),
       var(--bg);
-    border-bottom: 1px solid var(--border);
   }
-  .eyebrow {
-    font-size: 0.82rem; letter-spacing: 0.14em; text-transform: uppercase;
-    color: var(--accent); font-weight: 600;
+  .hero .eyebrow {
+    font-size: 0.76rem; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--accent); font-weight: 700;
   }
-  h1.title {
-    font-size: clamp(1.8rem, 3.4vw, 2.8rem);
-    margin: 0.5rem 0 0.6rem; line-height: 1.15; letter-spacing: -0.01em;
+  h1.display {
+    margin: 0.9rem 0 0.6rem;
+    font-size: clamp(2.3rem, 5.3vw, 4.6rem);
+    line-height: 1.04; letter-spacing: -0.028em; font-weight: 800;
+    background: linear-gradient(180deg, #ffffff 0%, #b8c2d8 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
   }
-  .byline {
-    color: var(--muted); font-size: 1.02rem; margin: 0 0 1.4rem;
+  .hero .lede {
+    font-size: clamp(1.02rem, 1.5vw, 1.24rem);
+    color: #cdd3e3; max-width: 780px; line-height: 1.6; margin: 0 0 1.4rem;
+    font-weight: 400;
   }
-  .byline strong { color: var(--text); }
-  .chiprow { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.6rem; }
+  .hero .lede b { color: var(--text); font-weight: 600; }
+  .meta-card {
+    display: inline-grid; grid-template-columns: auto auto; gap: 0.25rem 1.4rem;
+    margin: 0.6rem 0 1.5rem; padding: 0.9rem 1.2rem;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border-2); border-radius: 14px;
+    font-size: 0.92rem;
+  }
+  .meta-card dt { color: var(--muted); font-weight: 500; }
+  .meta-card dd { margin: 0; color: var(--text); font-weight: 600; }
+  .chiprow { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.8rem; }
   .chip {
     background: var(--bg-2); border: 1px solid var(--border);
-    padding: 5px 10px; border-radius: 999px; font-size: 0.83rem;
-    color: var(--muted);
+    padding: 6px 12px; border-radius: 999px; font-size: 0.82rem;
+    color: var(--muted); font-weight: 500;
+    font-variant-numeric: tabular-nums;
   }
-  .chip b { color: var(--text); }
-  .cta { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+  .chip b { color: var(--text); font-weight: 700; }
+  .cta-row { display: flex; flex-wrap: wrap; gap: 0.7rem; }
   .btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 9px 14px; border-radius: 10px; font-size: 0.94rem;
-    border: 1px solid var(--border); background: var(--bg-1);
-    color: var(--text); cursor: pointer; transition: border-color 0.15s;
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 11px 18px; border-radius: 999px; font-size: 0.93rem;
+    border: 1px solid var(--border-2); background: var(--bg-1);
+    color: var(--text); cursor: pointer; font-weight: 600;
+    transition: all 0.18s ease;
   }
-  .btn:hover { border-color: #3a4562; text-decoration: none; }
+  .btn:hover { border-color: #4a5370; background: var(--bg-2); color: var(--text); }
   .btn.primary {
-    background: linear-gradient(180deg, #2e6bff 0%, #1e4fcc 100%);
-    border-color: #3a6dff; color: white; font-weight: 600;
+    background: var(--accent); border-color: var(--accent); color: #fff;
+    box-shadow: 0 8px 22px -10px var(--ring);
   }
-  .btn.primary:hover { border-color: #5a85ff; }
+  .btn.primary:hover { background: #5a90ff; border-color: #5a90ff; color: #fff; }
 
-  /* ---------- sections ---------- */
-  section { padding: 2.6rem 0; border-bottom: 1px solid var(--border); }
+  /* ---------- section framing ---------- */
+  section {
+    padding: 5rem 0 5rem; border-top: 1px solid var(--border);
+    position: relative;
+  }
+  section .eyebrow {
+    font-size: 0.74rem; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--accent); font-weight: 700; margin-bottom: 0.6rem;
+  }
   section h2 {
-    font-size: 1.35rem; letter-spacing: -0.005em; margin: 0 0 1rem;
+    font-size: clamp(1.6rem, 2.6vw, 2.15rem);
+    line-height: 1.15; letter-spacing: -0.018em; font-weight: 700;
+    margin: 0 0 0.6rem;
   }
-  section h2 .count { color: var(--muted); font-weight: 400; font-size: 0.9rem; }
+  section .lede-sub {
+    color: var(--muted); font-size: 1.02rem; max-width: 700px; margin: 0 0 2rem;
+  }
 
-  /* ---------- cards ---------- */
-  .grid {
-    display: grid; gap: 1rem;
-    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  }
+  /* ---------- grids & cards ---------- */
+  .grid { display: grid; gap: 1rem; }
+  .grid.c2 { grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); }
+  .grid.c3 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .grid.c5 { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
   .card {
     background: var(--bg-1); border: 1px solid var(--border);
-    border-radius: 12px; padding: 1.1rem 1.2rem;
+    border-radius: 18px; padding: 1.4rem 1.5rem;
+    transition: border-color 0.18s, transform 0.18s;
   }
+  .card:hover { border-color: var(--border-2); transform: translateY(-2px); }
   .card h3 {
-    margin: 0 0 0.3rem; font-size: 1.02rem; color: var(--accent);
+    margin: 0 0 0.35rem; font-size: 0.96rem; color: var(--accent);
+    letter-spacing: 0.01em; font-weight: 700;
   }
   .card .stat {
-    font-size: 1.75rem; font-weight: 700; letter-spacing: -0.01em;
-    color: var(--text); line-height: 1.1;
+    font-size: 2.3rem; font-weight: 800; letter-spacing: -0.02em;
+    line-height: 1.05; font-variant-numeric: tabular-nums;
+    background: linear-gradient(180deg, #ffffff 0%, #b8c2d8 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
   }
-  .card .stat small { font-size: 0.95rem; font-weight: 500; color: var(--muted); }
-  .card p { color: var(--muted); font-size: 0.92rem; margin: 0.4rem 0 0; }
+  .card .stat small { font-size: 0.92rem; font-weight: 600; color: var(--muted); -webkit-text-fill-color: var(--muted); }
+  .card p { color: var(--muted); font-size: 0.93rem; margin: 0.6rem 0 0; line-height: 1.55; }
 
   /* ---------- stack ---------- */
-  .stack { display: grid; gap: 0.45rem; }
+  .stack { display: grid; gap: 0.55rem; }
   .layer {
-    display: grid; grid-template-columns: 52px 1fr;
-    gap: 0.9rem; align-items: center;
+    display: grid; grid-template-columns: 64px 1fr auto;
+    gap: 1rem; align-items: center;
     background: var(--bg-1); border: 1px solid var(--border);
-    border-radius: 10px; padding: 0.7rem 0.9rem;
+    border-radius: 14px; padding: 1rem 1.2rem;
+    transition: border-color 0.18s, transform 0.18s;
   }
+  .layer:hover { border-color: var(--border-2); transform: translateX(3px); }
   .layer .num {
-    background: #1a2438; color: var(--accent); font-weight: 700;
-    width: 36px; height: 36px; border-radius: 8px; display: grid;
-    place-items: center; font-size: 0.98rem;
+    background: rgba(61,123,255,0.12); color: var(--accent); font-weight: 700;
+    width: 44px; height: 44px; border-radius: 12px; display: grid;
+    place-items: center; font-size: 0.95rem; letter-spacing: 0.02em;
   }
-  .layer h4 { margin: 0; font-size: 0.98rem; }
-  .layer p { margin: 0.1rem 0 0; font-size: 0.87rem; color: var(--muted); }
+  .layer h4 { margin: 0; font-size: 1.02rem; font-weight: 700; letter-spacing: -0.005em; }
+  .layer p { margin: 0.2rem 0 0; font-size: 0.89rem; color: var(--muted); }
+  .layer .tag { font-size: 0.78rem; color: var(--muted); font-family: "SF Mono", ui-monospace, Menlo, monospace; }
 
-  /* ---------- table ---------- */
-  table { border-collapse: collapse; width: 100%; font-size: 0.94rem; }
-  th, td { border-bottom: 1px solid var(--border); padding: 9px 12px; text-align: left; }
-  th { color: var(--muted); font-weight: 600; font-size: 0.85rem; letter-spacing: 0.03em; text-transform: uppercase; }
-  tbody tr:hover { background: rgba(122,167,255,0.04); }
-  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  /* ---------- tables ---------- */
+  table { border-collapse: collapse; width: 100%; font-size: 0.94rem; font-variant-numeric: tabular-nums; }
+  th, td { border-bottom: 1px solid var(--border); padding: 11px 12px; text-align: left; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  tbody tr { transition: background 0.12s; }
+  tbody tr:hover { background: rgba(61,123,255,0.04); }
+  td.num, th.num { text-align: right; }
+  td code { font-size: 0.9rem; }
 
-  /* ---------- code / demo panel ---------- */
+  /* ---------- panels / demo ---------- */
   code {
     background: var(--bg-2); border: 1px solid var(--border);
-    padding: 1px 6px; border-radius: 5px; font-size: 0.87em;
+    padding: 1px 7px; border-radius: 5px; font-size: 0.88em;
+    font-family: "SF Mono", ui-monospace, Menlo, monospace;
   }
   pre {
     background: var(--bg-2); border: 1px solid var(--border);
-    border-radius: 10px; padding: 12px 14px; overflow-x: auto;
-    font-size: 0.85rem; color: #d3dcef;
+    border-radius: 12px; padding: 14px 16px; overflow-x: auto;
+    font-size: 0.86rem; color: #d3dcef; line-height: 1.5;
+    font-family: "SF Mono", ui-monospace, Menlo, monospace;
   }
   .panel {
     background: var(--bg-1); border: 1px solid var(--border);
-    border-radius: 12px; padding: 1.1rem 1.2rem;
+    border-radius: 18px; padding: 1.4rem 1.5rem;
   }
-  .kv { display: grid; grid-template-columns: 180px 1fr; gap: 0.3rem 1rem; font-size: 0.95rem; }
+  .panel h3 { margin: 0 0 0.6rem; font-size: 1.02rem; color: var(--accent); font-weight: 700; }
+  .kv {
+    display: grid; grid-template-columns: 160px 1fr; gap: 0.35rem 1rem;
+    font-size: 0.93rem;
+  }
   .kv dt { color: var(--muted); }
-  .kv dd { margin: 0; color: var(--text); }
-  .pill {
-    display: inline-block; padding: 2px 9px; border-radius: 999px;
-    font-size: 0.78rem; font-weight: 600; border: 1px solid transparent;
-  }
-  .pill.good { background: rgba(137,240,183,0.10); border-color: rgba(137,240,183,0.3); color: var(--accent-2); }
-  .pill.warn { background: rgba(247,199,140,0.10); border-color: rgba(247,199,140,0.3); color: var(--warn); }
-  .pill.bad  { background: rgba(255,140,158,0.10); border-color: rgba(255,140,158,0.3); color: var(--danger); }
+  .kv dd { margin: 0; color: var(--text); font-variant-numeric: tabular-nums; }
 
-  footer { padding: 2rem 0 3rem; color: var(--muted); font-size: 0.88rem; }
-  footer a { color: var(--muted); }
-  footer a:hover { color: var(--text); }
+  .pill {
+    display: inline-block; padding: 3px 10px; border-radius: 999px;
+    font-size: 0.78rem; font-weight: 600; border: 1px solid transparent;
+    letter-spacing: 0.01em;
+  }
+  .pill.good { background: rgba(24,185,132,0.10); border-color: rgba(24,185,132,0.35); color: var(--accent-2); }
+  .pill.warn { background: rgba(229,168,79,0.10); border-color: rgba(229,168,79,0.35); color: var(--warn); }
+  .pill.bad  { background: rgba(255,132,148,0.10); border-color: rgba(255,132,148,0.35); color: var(--danger); }
+
+  .inline-demo textarea {
+    width: 100%; min-height: 160px; background: var(--bg-2);
+    color: var(--text); border: 1px solid var(--border);
+    border-radius: 12px; padding: 11px 14px;
+    font-family: "SF Mono", ui-monospace, Menlo, monospace;
+    font-size: 0.84rem; resize: vertical; line-height: 1.5;
+  }
 
   .arch-fig {
     max-width: 100%; border: 1px solid var(--border);
-    border-radius: 10px; background: #fff; display: block;
+    border-radius: 16px; background: #fff; display: block;
   }
 
-  .inline-demo textarea {
-    width: 100%; min-height: 120px; background: var(--bg-2);
-    color: var(--text); border: 1px solid var(--border);
-    border-radius: 8px; padding: 10px 12px; font-family: "SF Mono", Menlo, monospace;
-    font-size: 0.85rem;
+  footer { padding: 3rem 0 4rem; color: var(--muted); font-size: 0.88rem; border-top: 1px solid var(--border); }
+  footer a { color: var(--muted); }
+  footer a:hover { color: var(--text); }
+  footer .foot-grid {
+    display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 2rem;
+  }
+  footer h4 { color: var(--text); font-size: 0.9rem; margin: 0 0 0.6rem; font-weight: 700; }
+  footer ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.3rem; }
+
+  /* ---------- reveal animation ---------- */
+  .reveal {
+    opacity: 0; transform: translateY(18px);
+    transition: opacity 0.7s cubic-bezier(.2,.6,.2,1), transform 0.7s cubic-bezier(.2,.6,.2,1);
+  }
+  .reveal.in { opacity: 1; transform: none; }
+
+  /* ---------- quote ---------- */
+  blockquote.pullquote {
+    margin: 0; padding: 0;
+    font-size: clamp(1.4rem, 2.4vw, 2rem);
+    line-height: 1.3; letter-spacing: -0.012em;
+    font-weight: 600; color: var(--text);
+  }
+  blockquote.pullquote .accent { color: var(--accent); }
+
+  @media (max-width: 760px) {
+    .kv { grid-template-columns: 140px 1fr; }
+    footer .foot-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
 <body>
 
-<!-- ================= HERO ================= -->
+<!-- ============== STICKY NAV ============== -->
+<nav class="top">
+  <div class="row">
+    <div class="brand">Aryan <span class="dim">— Truss Optimisation Thesis</span></div>
+    <div class="links">
+      <a href="#abstract">Abstract</a>
+      <a href="#contributions">Contributions</a>
+      <a href="#benchmarks">Benchmarks</a>
+      <a href="#stack">Stack</a>
+      <a href="#results">Results</a>
+      <a href="#demo">Live demo</a>
+      <a href="#reproducibility">Reproducibility</a>
+      <a class="cta" href="/thesis.pdf" target="_blank">Read thesis &rarr;</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ============== HERO ============== -->
 <header class="hero">
   <div class="wrap">
-    <div class="eyebrow">M.Tech Thesis &middot; IIT (BHU) Varanasi &middot; 2026</div>
-    <h1 class="title">
-      AI-Powered Framework for Multi-Objective Steel Truss Optimization
+    <div class="eyebrow reveal">M.Tech / IDD Thesis · Civil Engineering · 2026</div>
+    <h1 class="display reveal">
+      An AI-Powered Framework for<br/>Multi-Objective Steel Truss Optimization
     </h1>
-    <p class="byline">
-      <strong>Aryan</strong> (IDD Civil, Y5) &middot; under the supervision of
-      <strong>Dr.&nbsp;Krishna&nbsp;Kant&nbsp;Pathak</strong>,
-      Department of Civil Engineering.
-      <br/>
-      Integrating evolutionary algorithms, neural surrogates, reinforcement
-      learning, and LLM-assisted design under IS&nbsp;800:2007 compliance.
+    <p class="lede reveal">
+      Integrating evolutionary algorithms, neural surrogate models, reinforcement
+      learning, and <b>LLM-assisted design</b> under <b>IS&nbsp;800:2007</b>
+      compliance — validated end-to-end against four canonical benchmarks and
+      shipped as a reproducible Python framework with a laptop-friendly
+      design aid.
     </p>
-    <div class="chiprow">
+
+    <dl class="meta-card reveal">
+      <dt>Author</dt><dd>Aryan · Roll <span class="mono">21064030</span></dd>
+      <dt>Programme</dt><dd>IDD Civil Engineering · Year 5</dd>
+      <dt>Institute</dt><dd>IIT (BHU) Varanasi</dd>
+      <dt>Supervisor</dt><dd>Dr. Krishna Kant Pathak</dd>
+      <dt>Department</dt><dd>Department of Civil Engineering</dd>
+      <dt>Defence</dt><dd>M.Tech / IDD Viva · April 2026</dd>
+    </dl>
+
+    <div class="chiprow reveal">
       <span class="chip"><b>125</b>-page thesis</span>
-      <span class="chip"><b>23</b>-slide viva deck</span>
+      <span class="chip"><b>34</b>-slide viva deck</span>
       <span class="chip"><b>89</b> references</span>
       <span class="chip"><b>27</b> figures</span>
+      <span class="chip"><b>4</b> appendices</span>
       <span class="chip"><b>4</b> benchmarks</span>
-      <span class="chip"><b>tag</b> phase-10-complete</span>
+      <span class="chip mono"><b>tag</b> phase-10-complete</span>
       <span class="chip" id="key-chip">LLM key: checking&hellip;</span>
     </div>
-    <div class="cta">
+
+    <div class="cta-row reveal">
       <a class="btn primary" href="/thesis.pdf" target="_blank">Download thesis PDF</a>
       <a class="btn" href="/slides.pdf" target="_blank">Viva slides</a>
-      <a class="btn" href="http://localhost:8501" target="_blank">Streamlit demo &rarr;</a>
-      <a class="btn" href="/docs">Swagger UI</a>
-      <a class="btn" href="/redoc">ReDoc</a>
+      <a class="btn" href="http://localhost:8501" target="_blank">Open Streamlit demo</a>
+      <a class="btn" href="/docs">Swagger API</a>
       <a class="btn" href="https://github.com/piyushp1804/thesis" target="_blank">GitHub</a>
     </div>
   </div>
 </header>
 
-<!-- ================= ABSTRACT ================= -->
-<section>
+<!-- ============== PULLQUOTE ============== -->
+<section style="padding: 4rem 0">
+  <div class="tight reveal">
+    <blockquote class="pullquote">
+      &ldquo;Can a large language model warm-start classical metaheuristics to
+      converge faster on truss sizing — <span class="accent">while staying
+      IS&nbsp;800-compliant?</span>&rdquo;
+    </blockquote>
+    <p style="color:var(--muted);margin-top:1rem;font-size:0.95rem">
+      The central research question of this thesis. Answered
+      quantitatively across four benchmarks and five contributions.
+    </p>
+  </div>
+</section>
+
+<!-- ============== ABSTRACT ============== -->
+<section id="abstract">
   <div class="wrap">
-    <h2>Abstract</h2>
-    <div class="panel" style="max-width: 880px">
+    <div class="eyebrow reveal">Abstract</div>
+    <h2 class="reveal">Two paragraphs for someone with five minutes.</h2>
+    <div class="panel reveal" style="max-width: 900px">
       <p>
         Steel-truss sizing optimisation under IS&nbsp;800:2007 is classically
         solved with evolutionary metaheuristics whose inner loops spend
@@ -213,8 +365,8 @@
         modern AI layers &mdash; a neural surrogate, a reinforcement-learning
         agent, and a large-language-model warm-start designer &mdash; into
         one reproducible system, validated against four canonical
-        benchmarks: the 10-bar planar, 25-bar spatial, 72-bar spatial
-        tower, and 200-bar planar stepped tower.
+        benchmarks: the <b>10-bar planar</b>, <b>25-bar spatial</b>,
+        <b>72-bar spatial tower</b>, and <b>200-bar planar stepped tower</b>.
       </p>
       <p>
         The framework matches Sunar&nbsp;&amp;&nbsp;Belegundu&nbsp;(1991) on
@@ -222,203 +374,249 @@
         achieves R<sup>2</sup>&nbsp;=&nbsp;0.9993 on weight and a
         <b>132&times;</b> wall-clock speedup; an LLM warm-start reduces
         generations-to-convergence on 10-bar by <b>36.8&thinsp;%</b> at
-        paired-Wilcoxon p&nbsp;=&nbsp;0.0046 across 40 seeds; and a
-        rigorous-feasibility re-run of 72-bar exposes that the
-        literature-cited optima are infeasible by 22&ndash;62&thinsp;%
-        under hard-constraint enforcement &mdash; a methodological
-        correction to the published literature.
+        paired-Wilcoxon p&nbsp;=&nbsp;0.0046 across 40 seeds; and a rigorous
+        re-run of the 72-bar spatial tower exposes that the
+        literature-cited optima are infeasible by
+        <b>22&ndash;62&thinsp;%</b> under hard-constraint enforcement
+        &mdash; a methodological correction to the published literature.
       </p>
     </div>
   </div>
 </section>
 
-<!-- ================= CONTRIBUTIONS ================= -->
-<section>
+<!-- ============== CONTRIBUTIONS ============== -->
+<section id="contributions">
   <div class="wrap">
-    <h2>Contributions <span class="count">C1&ndash;C5</span></h2>
-    <div class="grid">
-      <div class="card">
-        <h3>C1 &middot; Validated stack</h3>
+    <div class="eyebrow reveal">Contributions</div>
+    <h2 class="reveal">Five headline numbers I will defend.</h2>
+    <p class="lede-sub reveal">
+      The thesis makes five numerically-validated contributions — C1 through C5 —
+      each traced back to a specific results section and a reproducible seed.
+    </p>
+    <div class="grid c5">
+      <div class="card reveal">
+        <h3>C1 · Validated stack</h3>
         <div class="stat">0.004<small>&thinsp;%</small></div>
-        <p>PSO-best on 10-bar matches Sunar&nbsp;&amp;&nbsp;Belegundu (1991)
-           published optimum of 5060.85&nbsp;lb end-to-end.</p>
+        <p>PSO-best on 10-bar matches Sunar&nbsp;&amp;&nbsp;Belegundu (1991) published 5060.85&nbsp;lb end-to-end.</p>
       </div>
-      <div class="card">
-        <h3>C2 &middot; Neural surrogate</h3>
-        <div class="stat">132<small>&times; speedup</small></div>
-        <p>MLP <code>[256,128,64]</code>, R<sup>2</sup>=0.9993 on weight,
-           surrogate-in-loop optima within 0.09&thinsp;%.</p>
+      <div class="card reveal">
+        <h3>C2 · Neural surrogate</h3>
+        <div class="stat">132<small>&times; faster</small></div>
+        <p>MLP&nbsp;[256,128,64], R<sup>2</sup>=0.9993 on weight, surrogate-in-loop optima within 0.09&thinsp;%.</p>
       </div>
-      <div class="card">
-        <h3>C3 &middot; 72-bar correction</h3>
-        <div class="stat">22&ndash;62<small>&thinsp;% infeasible</small></div>
-        <p>Literature-cited 379.62&nbsp;lb optimum fails hard-constraint
-           enforcement; true feasible optimum ≈ 549&nbsp;lb.</p>
+      <div class="card reveal">
+        <h3>C3 · 72-bar correction</h3>
+        <div class="stat">22&ndash;62<small>&thinsp;%</small></div>
+        <p>Literature-cited 380-lb optimum fails hard constraints; rigorous optimum ≈ 549&nbsp;lb.</p>
       </div>
-      <div class="card">
-        <h3>C4 &middot; LLM warm-start</h3>
+      <div class="card reveal">
+        <h3>C4 · LLM warm-start</h3>
         <div class="stat">&minus;36.8<small>&thinsp;% gens</small></div>
-        <p>p = 0.0046 across 40 seeds on 10-bar; effect-map diminishes on
-           larger 3D benchmarks (C4 is a finding, not a silver bullet).</p>
+        <p>p = 0.0046 across 40 seeds on 10-bar; effect-map diminishes on larger 3D benchmarks.</p>
       </div>
-      <div class="card">
-        <h3>C5 &middot; IS 800 UI</h3>
-        <div class="stat">&lt; 10<small>&thinsp;s / design</small></div>
-        <p>Full pipeline incl. IS&nbsp;800 clauses 3.8 / 5.6.1 / 6 / 7 on a
-           laptop CPU; zero-install Streamlit demo.</p>
+      <div class="card reveal">
+        <h3>C5 · IS 800 UI</h3>
+        <div class="stat">&lt; 10<small>&thinsp;s</small></div>
+        <p>Full pipeline incl. IS&nbsp;800 compliance and LLM cross-check on a laptop CPU.</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ================= LIVE STATUS ================= -->
-<section>
+<!-- ============== LIVE STATUS + DEMO ============== -->
+<section id="demo">
   <div class="wrap">
-    <h2>Live API status</h2>
-    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">
-      <div class="panel">
-        <h3 style="margin-top:0;color:var(--accent)">Server</h3>
+    <div class="eyebrow reveal">Live</div>
+    <h2 class="reveal">This page is talking to a running API.</h2>
+    <p class="lede-sub reveal">
+      The panels below query the FastAPI process on
+      <code>localhost:8000</code>. No server-side rendering — everything you
+      see is fetched live from <code>/status</code>, <code>/benchmarks</code>,
+      and <code>/llm/suggest</code>.
+    </p>
+    <div class="grid c2">
+      <div class="panel reveal">
+        <h3>API status</h3>
         <dl class="kv">
           <dt>API version</dt><dd id="st-version">&hellip;</dd>
           <dt>Benchmarks</dt><dd id="st-bench">&hellip;</dd>
           <dt>LLM cache files</dt><dd id="st-cache">&hellip;</dd>
-          <dt>Key loaded</dt><dd id="st-key">&hellip;</dd>
-          <dt>LLM model</dt><dd><code>claude-sonnet-4-5</code></dd>
+          <dt>Anthropic key</dt><dd id="st-key">&hellip;</dd>
+          <dt>Model</dt><dd><code>claude-sonnet-4-5</code></dd>
+          <dt>Repository tag</dt><dd><code>phase-10-complete</code></dd>
         </dl>
       </div>
-      <div class="panel inline-demo">
-        <h3 style="margin-top:0;color:var(--accent)">Try Claude warm-start</h3>
-        <p style="margin-top:0;color:var(--muted);font-size:0.9rem">
-          Calls <code>POST /llm/suggest?benchmark=10bar</code>. Uses the
-          on-disk cache; falls back to heuristic if the key is unset.
+      <div class="panel inline-demo reveal">
+        <h3>Try Claude warm-start</h3>
+        <p style="color:var(--muted);margin:0 0 0.9rem;font-size:0.91rem">
+          Calls <code>POST /llm/suggest?benchmark=10bar</code>. Hits the
+          on-disk cache first. Falls back to a physics-informed heuristic if
+          the key is absent or the monthly quota is exhausted.
         </p>
         <button class="btn primary" onclick="runLLMDemo()">Suggest 10-bar areas</button>
-        <textarea id="llm-out" readonly placeholder="Response will appear here..."></textarea>
+        <textarea id="llm-out" readonly placeholder="Response appears here..."></textarea>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ================= 8-LAYER STACK ================= -->
-<section>
+<!-- ============== 8-LAYER STACK ============== -->
+<section id="stack">
   <div class="wrap">
-    <h2>The 8-layer AI stack</h2>
+    <div class="eyebrow reveal">The framework</div>
+    <h2 class="reveal">Eight layers, one dataflow.</h2>
+    <p class="lede-sub reveal">
+      Each layer is a deliberate design choice; each layer sits behind a
+      clean Python interface; each layer is exercised by at least one test
+      in the 81-test suite.
+    </p>
     <div class="stack">
-      <div class="layer"><div class="num">L1</div>
-        <div><h4>Benchmarks</h4>
-        <p>10-bar, 25-bar, 72-bar, 200-bar &mdash; pinned geometry, loads, bounds.</p></div></div>
-      <div class="layer"><div class="num">L2</div>
-        <div><h4>FEM kernel</h4>
-        <p>Linear-elastic truss solver, partition-method boundary conditions, O(n<sup>3</sup>) dense solve (Appendix&nbsp;A).</p></div></div>
-      <div class="layer"><div class="num">L3</div>
-        <div><h4>IS 800:2007 compliance</h4>
-        <p>Clauses 3.8 slenderness, 6.2/6.3 tension, 7.1 Perry-Robertson compression, 5.6.1 deflection (Appendix&nbsp;B).</p></div></div>
-      <div class="layer"><div class="num">L4</div>
-        <div><h4>Metaheuristics</h4>
-        <p>GA (pop 100, gens 500), PSO (swarm 50), NSGA-II (non-dominated sort + crowding) via pymoo.</p></div></div>
-      <div class="layer"><div class="num">L5</div>
-        <div><h4>Neural surrogate</h4>
-        <p>MLP [256,128,64] trained on 10k LHS samples; drop-in FEM replacement with FEM fallback on screen failure.</p></div></div>
-      <div class="layer"><div class="num">L6</div>
-        <div><h4>Reinforcement learning</h4>
-        <p>PPO agent, multiplicative sizing action, 0.2&nbsp;s inference latency.</p></div></div>
-      <div class="layer"><div class="num">L7</div>
-        <div><h4>LLM warm-start</h4>
-        <p>Claude-Opus / Claude-Sonnet seeds the first population; responses cached for reproducibility.</p></div></div>
-      <div class="layer"><div class="num">L8</div>
-        <div><h4>FastAPI + Streamlit UI</h4>
-        <p>This page + <a href="http://localhost:8501">:8501</a> design aid, sub-10&nbsp;s end-to-end on 10-bar.</p></div></div>
+      <div class="layer reveal"><div class="num">L1</div>
+        <div><h4>Benchmarks</h4><p>10-bar, 25-bar, 72-bar, 200-bar — pinned geometry, loads, and bounds (Appendix C).</p></div>
+        <div class="tag">src/benchmarks/</div></div>
+      <div class="layer reveal"><div class="num">L2</div>
+        <div><h4>FEM kernel</h4><p>Linear-elastic truss solver, partition-method boundary conditions, dense O(n<sup>3</sup>) solve (Appendix A).</p></div>
+        <div class="tag">src/fem/</div></div>
+      <div class="layer reveal"><div class="num">L3</div>
+        <div><h4>IS 800:2007 compliance</h4><p>Clauses 3.8 slenderness, 6.2/6.3 tension, 7.1 Perry-Robertson compression, 5.6.1 deflection (Appendix B).</p></div>
+        <div class="tag">src/constraints/</div></div>
+      <div class="layer reveal"><div class="num">L4</div>
+        <div><h4>Metaheuristics</h4><p>GA, PSO, NSGA-II via pymoo. Hard-constraint tournament; no soft penalties.</p></div>
+        <div class="tag">src/algorithms/</div></div>
+      <div class="layer reveal"><div class="num">L5</div>
+        <div><h4>Neural surrogate</h4><p>MLP [256, 128, 64] trained on 10k LHS samples. Drop-in FEM replacement, with FEM fallback on screen failure.</p></div>
+        <div class="tag">src/ml/</div></div>
+      <div class="layer reveal"><div class="num">L6</div>
+        <div><h4>Reinforcement learning</h4><p>PPO agent, multiplicative sizing action, 0.2&nbsp;s inference latency.</p></div>
+        <div class="tag">src/rl/</div></div>
+      <div class="layer reveal"><div class="num">L7</div>
+        <div><h4>LLM warm-start</h4><p>Claude Opus / Sonnet seeds the first population with reasoning and a confidence score. All responses cached.</p></div>
+        <div class="tag">src/llm/</div></div>
+      <div class="layer reveal"><div class="num">L8</div>
+        <div><h4>FastAPI + Streamlit UI</h4><p>This page plus <code>localhost:8501</code>: the design aid a practitioner actually uses.</p></div>
+        <div class="tag">src/app/</div></div>
     </div>
   </div>
 </section>
 
-<!-- ================= BENCHMARKS ================= -->
-<section>
+<!-- ============== BENCHMARKS ============== -->
+<section id="benchmarks">
   <div class="wrap">
-    <h2>Benchmarks <span class="count">live from <code>/benchmarks</code></span></h2>
-    <table id="bench-table">
-      <thead>
-        <tr>
-          <th>Name</th><th>Units</th>
-          <th class="num">design vars</th>
-          <th class="num">bars</th>
-          <th class="num">ref&nbsp;optimum</th>
-          <th>source</th>
-        </tr>
-      </thead>
-      <tbody><tr><td colspan="6" style="color:var(--muted)">loading&hellip;</td></tr></tbody>
-    </table>
-  </div>
-</section>
-
-<!-- ================= RESULTS SNAPSHOT ================= -->
-<section>
-  <div class="wrap">
-    <h2>Results snapshot <span class="count">from <code>results/scoreboard.csv</code></span></h2>
-    <table>
-      <thead>
-        <tr><th>Benchmark</th><th>Algorithm</th><th class="num">seeds</th><th class="num">best weight</th><th class="num">mean</th><th class="num">feasible</th><th class="num">% err vs lit</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>10-bar planar</td><td>PSO</td><td class="num">5</td><td class="num">5061.05</td><td class="num">5064.70</td><td class="num">100 %</td><td class="num">+0.004 %</td></tr>
-        <tr><td>10-bar planar</td><td>GA</td><td class="num">10</td><td class="num">5062.78</td><td class="num">5075.92</td><td class="num">100 %</td><td class="num">+0.038 %</td></tr>
-        <tr><td>10-bar planar</td><td>NSGA-II</td><td class="num">3</td><td class="num">5081.51</td><td class="num">5098.38</td><td class="num">100 %</td><td class="num">+0.408 %</td></tr>
-        <tr><td>25-bar spatial</td><td>PSO</td><td class="num">4</td><td class="num">545.31</td><td class="num">545.43</td><td class="num">100 %</td><td class="num">+0.028 %</td></tr>
-        <tr><td>72-bar tower (hard)</td><td>PSO</td><td class="num">5</td><td class="num">549.52</td><td class="num">549.73</td><td class="num">100 %</td><td class="num">lit infeasible</td></tr>
-        <tr><td>200-bar tower</td><td>PSO</td><td class="num">5</td><td class="num">315.89</td><td class="num">318.37</td><td class="num">100 %</td><td class="num">&mdash;</td></tr>
-      </tbody>
-    </table>
-  </div>
-</section>
-
-<!-- ================= ARCHITECTURE ================= -->
-<section>
-  <div class="wrap">
-    <h2>System architecture</h2>
-    <img class="arch-fig" src="/figures/fig_3_9_system_architecture.png" alt="System architecture"/>
-    <p style="color:var(--muted);font-size:0.88rem;margin-top:0.6rem">
-      Figure&nbsp;3.9 from the thesis &mdash; end-to-end dataflow from
-      benchmark definition through FEM kernel, IS&nbsp;800 checks, the
-      three optimisers, the surrogate fallback, the PPO agent, and the
-      LLM warm-start into this API and the Streamlit UI.
+    <div class="eyebrow reveal">Benchmarks</div>
+    <h2 class="reveal">Live from <code>/benchmarks</code>.</h2>
+    <p class="lede-sub reveal">
+      Four canonical sizing problems from the structural-optimisation
+      literature, each with a published reference optimum that the framework
+      is expected to reproduce within tolerance.
     </p>
+    <div class="panel reveal" style="padding: 0">
+      <table id="bench-table">
+        <thead>
+          <tr>
+            <th>Name</th><th>Units</th>
+            <th class="num">vars</th>
+            <th class="num">bars</th>
+            <th class="num">Reference optimum</th>
+            <th>Source</th>
+          </tr>
+        </thead>
+        <tbody><tr><td colspan="6" style="color:var(--muted)">loading&hellip;</td></tr></tbody>
+      </table>
+    </div>
   </div>
 </section>
 
-<!-- ================= ENDPOINTS ================= -->
+<!-- ============== RESULTS ============== -->
+<section id="results">
+  <div class="wrap">
+    <div class="eyebrow reveal">Results snapshot</div>
+    <h2 class="reveal">Straight from <code>results/scoreboard.csv</code>.</h2>
+    <p class="lede-sub reveal">
+      No cherry-picking; no re-runs. Every number below is the median/best
+      across the seed set reported in Chapter 4 of the thesis.
+    </p>
+    <div class="panel reveal" style="padding:0">
+      <table>
+        <thead>
+          <tr><th>Benchmark</th><th>Algo.</th><th class="num">Seeds</th><th class="num">Best weight</th><th class="num">Mean</th><th class="num">Feasible</th><th class="num">Error vs lit.</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>10-bar planar</td><td>PSO</td><td class="num">5</td><td class="num">5061.05</td><td class="num">5064.70</td><td><span class="pill good">100 %</span></td><td class="num">+0.004 %</td></tr>
+          <tr><td>10-bar planar</td><td>GA</td><td class="num">10</td><td class="num">5062.78</td><td class="num">5075.92</td><td><span class="pill good">100 %</span></td><td class="num">+0.038 %</td></tr>
+          <tr><td>10-bar planar</td><td>NSGA-II</td><td class="num">3</td><td class="num">5081.51</td><td class="num">5098.38</td><td><span class="pill good">100 %</span></td><td class="num">+0.408 %</td></tr>
+          <tr><td>25-bar spatial</td><td>PSO</td><td class="num">4</td><td class="num">545.31</td><td class="num">545.43</td><td><span class="pill good">100 %</span></td><td class="num">+0.028 %</td></tr>
+          <tr><td>72-bar tower (hard)</td><td>PSO</td><td class="num">5</td><td class="num">549.52</td><td class="num">549.73</td><td><span class="pill good">100 %</span></td><td class="num"><span class="pill warn">lit. infeasible</span></td></tr>
+          <tr><td>200-bar stepped tower</td><td>PSO</td><td class="num">5</td><td class="num">315.89</td><td class="num">318.37</td><td><span class="pill good">100 %</span></td><td class="num">&mdash;</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============== ARCHITECTURE ============== -->
 <section>
   <div class="wrap">
-    <h2>HTTP endpoints</h2>
-    <table>
-      <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
-      <tbody>
-        <tr><td>GET</td><td><a href="/health"><code>/health</code></a></td><td>Liveness check</td></tr>
-        <tr><td>GET</td><td><a href="/status"><code>/status</code></a></td><td>API + key + cache + versions</td></tr>
-        <tr><td>GET</td><td><a href="/benchmarks"><code>/benchmarks</code></a></td><td>List benchmarks</td></tr>
-        <tr><td>GET</td><td><code>/benchmarks/{name}</code></td><td>Metadata for one benchmark</td></tr>
-        <tr><td>POST</td><td><code>/optimize</code></td><td>Run GA / PSO / NSGA-II, return best + history</td></tr>
-        <tr><td>POST</td><td><code>/llm/suggest</code></td><td>Claude (or cached / heuristic) warm-start design</td></tr>
-        <tr><td>GET</td><td><a href="/docs"><code>/docs</code></a></td><td>Interactive Swagger UI</td></tr>
-        <tr><td>GET</td><td><a href="/redoc"><code>/redoc</code></a></td><td>ReDoc reference</td></tr>
-        <tr><td>GET</td><td><a href="/thesis.pdf"><code>/thesis.pdf</code></a></td><td>Download the 125-page thesis</td></tr>
-        <tr><td>GET</td><td><a href="/slides.pdf"><code>/slides.pdf</code></a></td><td>Download the 23-slide viva deck</td></tr>
-      </tbody>
-    </table>
+    <div class="eyebrow reveal">Architecture</div>
+    <h2 class="reveal">One figure, everything.</h2>
+    <p class="lede-sub reveal">
+      Figure 3.9 from the thesis — end-to-end dataflow from benchmark
+      definition through the FEM kernel, IS&nbsp;800 checks, three
+      optimisers, surrogate fallback, PPO agent, and LLM warm-start into this
+      API and the Streamlit UI.
+    </p>
+    <img class="arch-fig reveal" src="/figures/fig_3_9_system_architecture.png" alt="System architecture diagram"/>
+  </div>
+</section>
+
+<!-- ============== ENDPOINTS ============== -->
+<section>
+  <div class="wrap">
+    <div class="eyebrow reveal">API</div>
+    <h2 class="reveal">HTTP surface.</h2>
+    <p class="lede-sub reveal">
+      Everything this page does, you can do from <code>curl</code>. Full
+      interactive playground at <a href="/docs">/docs</a>.
+    </p>
+    <div class="panel reveal" style="padding:0">
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>GET</td><td><a href="/health"><code>/health</code></a></td><td>Liveness check</td></tr>
+          <tr><td>GET</td><td><a href="/status"><code>/status</code></a></td><td>API + key + cache + versions</td></tr>
+          <tr><td>GET</td><td><a href="/benchmarks"><code>/benchmarks</code></a></td><td>List benchmarks</td></tr>
+          <tr><td>GET</td><td><code>/benchmarks/{name}</code></td><td>Metadata for one benchmark</td></tr>
+          <tr><td>POST</td><td><code>/optimize</code></td><td>Run GA / PSO / NSGA-II, return best + history</td></tr>
+          <tr><td>POST</td><td><code>/llm/suggest</code></td><td>Claude (or cached / heuristic) warm-start design</td></tr>
+          <tr><td>GET</td><td><a href="/docs"><code>/docs</code></a></td><td>Interactive Swagger UI</td></tr>
+          <tr><td>GET</td><td><a href="/redoc"><code>/redoc</code></a></td><td>ReDoc reference</td></tr>
+          <tr><td>GET</td><td><a href="/thesis.pdf"><code>/thesis.pdf</code></a></td><td>Download the 125-page thesis</td></tr>
+          <tr><td>GET</td><td><a href="/slides.pdf"><code>/slides.pdf</code></a></td><td>Download the 34-slide viva deck</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="reveal" style="margin-top:1.2rem">
 <pre>$ curl -s http://127.0.0.1:8000/status | jq
 $ curl -s -X POST 'http://127.0.0.1:8000/llm/suggest?benchmark=10bar' | jq
 $ curl -s -X POST http://127.0.0.1:8000/optimize \
     -H "Content-Type: application/json" \
-    -d '{"algorithm":"pso","benchmark":"10bar","seed":42,"pop_size":60,"n_gen":100,"use_llm_warmstart":true}'</pre>
+    -d '{"algorithm":"pso","benchmark":"10bar","seed":42,
+         "pop_size":60,"n_gen":100,"use_llm_warmstart":true}'</pre>
+    </div>
   </div>
 </section>
 
-<!-- ================= REPRODUCIBILITY ================= -->
-<section>
+<!-- ============== REPRODUCIBILITY ============== -->
+<section id="reproducibility">
   <div class="wrap">
-    <h2>Reproducibility</h2>
-    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
-      <div class="panel">
-        <h3 style="margin-top:0;color:var(--accent)">Pinned stack</h3>
+    <div class="eyebrow reveal">Reproducibility</div>
+    <h2 class="reveal">Every number rebuildable from one tag.</h2>
+    <p class="lede-sub reveal">
+      Pinned dependencies, fixed seeds, cached LLM responses, and the thesis
+      PDF itself rebuildable with a single Tectonic invocation.
+    </p>
+    <div class="grid c3">
+      <div class="panel reveal">
+        <h3>Pinned stack</h3>
         <dl class="kv">
           <dt>Python</dt><dd>3.14.1</dd>
           <dt>NumPy</dt><dd>1.26.4</dd>
@@ -430,19 +628,20 @@ $ curl -s -X POST http://127.0.0.1:8000/optimize \
           <dt>Tectonic</dt><dd>0.16.9</dd>
         </dl>
       </div>
-      <div class="panel">
-        <h3 style="margin-top:0;color:var(--accent)">Seeds</h3>
-        <p style="color:var(--muted);margin:0 0 0.4rem">
-          Fixed per algorithm, documented per run.
+      <div class="panel reveal">
+        <h3>Fixed seeds</h3>
+        <p style="color:var(--muted);margin:0 0 0.5rem;font-size:0.91rem">
+          Documented per run in Chapter 4 and Appendix D.
         </p>
-        <code>[42, 123, 456, 789, 2026, 7, 13, 91, 314, 271]</code>
+        <p style="margin:0"><code>[42, 123, 456, 789, 2026, 7, 13, 91, 314, 271]</code></p>
       </div>
-      <div class="panel">
-        <h3 style="margin-top:0;color:var(--accent)">Rebuild the PDFs</h3>
+      <div class="panel reveal">
+        <h3>Rebuild commands</h3>
 <pre>tectonic thesis_writeup/main.tex
-tectonic thesis_writeup/slides/main.tex</pre>
-        <p style="color:var(--muted);margin:0;font-size:0.88rem">
-          Zero Anthropic API key needed &mdash; all responses cached under
+tectonic thesis_writeup/slides/main.tex
+pytest -q</pre>
+        <p style="color:var(--muted);margin:0;font-size:0.86rem">
+          Zero Anthropic API key needed — all responses cached under
           <code>results/llm_cache/</code>.
         </p>
       </div>
@@ -450,35 +649,60 @@ tectonic thesis_writeup/slides/main.tex</pre>
   </div>
 </section>
 
-<!-- ================= FOOTER ================= -->
+<!-- ============== FOOTER ============== -->
 <footer>
-  <div class="wrap">
-    Aryan &middot; IDD Civil, IIT (BHU) Varanasi &middot; Thesis tagged
-    <code>phase-10-complete</code> &middot;
-    <a href="/docs">API docs</a> &middot;
-    <a href="https://github.com/piyushp1804/thesis" target="_blank">source</a>
+  <div class="wrap foot-grid">
+    <div>
+      <h4>Aryan</h4>
+      Roll <span class="mono" style="color:var(--text)">21064030</span> ·
+      IDD Civil Engineering, Year 5<br/>
+      Department of Civil Engineering<br/>
+      Indian Institute of Technology (BHU) Varanasi<br/><br/>
+      Supervisor: Dr. Krishna Kant Pathak<br/>
+      Thesis defended April 2026.
+    </div>
+    <div>
+      <h4>Thesis artefacts</h4>
+      <ul>
+        <li><a href="/thesis.pdf" target="_blank">125-page thesis PDF</a></li>
+        <li><a href="/slides.pdf" target="_blank">34-slide viva deck</a></li>
+        <li><a href="/docs">API reference</a></li>
+        <li><a href="http://localhost:8501" target="_blank">Streamlit demo</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Code</h4>
+      <ul>
+        <li><a href="https://github.com/piyushp1804/thesis" target="_blank">GitHub repository</a></li>
+        <li>Tag <code>phase-10-complete</code></li>
+        <li>89 references · 27 figures</li>
+        <li>81-test green suite</li>
+      </ul>
+    </div>
   </div>
 </footer>
 
 <script>
+const $ = (id) => document.getElementById(id);
+
 async function loadStatus() {
   try {
     const s = await (await fetch('/status')).json();
-    document.getElementById('st-version').textContent = 'v' + s.version;
-    document.getElementById('st-bench').innerHTML =
-      s.benchmarks.map(b => '<code>' + b + '</code>').join(' ');
-    document.getElementById('st-cache').textContent =
-      s.llm_cache_count + ' cached responses';
+    $('st-version').textContent = 'v' + s.version;
+    $('st-bench').innerHTML = s.benchmarks.map(b => '<code>' + b + '</code>').join(' ');
+    $('st-cache').textContent = s.llm_cache_count + ' cached responses';
     const key = s.anthropic_key_loaded;
-    document.getElementById('st-key').innerHTML = key
+    $('st-key').innerHTML = key
       ? '<span class="pill good">loaded from .env</span>'
       : '<span class="pill warn">not set &mdash; heuristic fallback</span>';
-    const chip = document.getElementById('key-chip');
-    chip.innerHTML = key
-      ? 'LLM key: <b style="color:#89f0b7">active</b>'
-      : 'LLM key: <b style="color:#f7c78c">not set</b>';
+    $('key-chip').innerHTML = key
+      ? 'LLM key: <b style="color:#18b984">active</b>'
+      : 'LLM key: <b style="color:#e5a84f">not set</b>';
   } catch (e) {
-    document.getElementById('st-version').textContent = 'error';
+    $('st-version').textContent = 'error';
+    $('st-bench').textContent = '—';
+    $('st-cache').textContent = '—';
+    $('st-key').innerHTML = '<span class="pill bad">API unreachable</span>';
   }
 }
 
@@ -495,7 +719,7 @@ async function loadBenchmarks() {
     for (const row of rows) {
       const tr = document.createElement('tr');
       if (row.error) {
-        tr.innerHTML = '<td colspan="6" style="color:var(--muted)">' + row.name + ' &mdash; not available</td>';
+        tr.innerHTML = '<td colspan="6" style="color:var(--muted)">' + row.name + ' &mdash; unavailable</td>';
       } else {
         tr.innerHTML = `
           <td><code>${row.name}</code></td>
@@ -514,7 +738,7 @@ async function loadBenchmarks() {
 }
 
 async function runLLMDemo() {
-  const out = document.getElementById('llm-out');
+  const out = $('llm-out');
   out.value = 'Calling /llm/suggest?benchmark=10bar ...';
   try {
     const r = await fetch('/llm/suggest?benchmark=10bar', { method: 'POST' });
@@ -522,7 +746,7 @@ async function runLLMDemo() {
     const preview = {
       source: j.source,
       confidence: j.confidence,
-      reasoning: (j.reasoning || '').slice(0, 380) + ((j.reasoning || '').length > 380 ? '...' : ''),
+      reasoning: (j.reasoning || '').slice(0, 420) + ((j.reasoning || '').length > 420 ? '...' : ''),
       areas_first_5: j.x.slice(0, 5).map(v => +v.toFixed(3)),
       areas_length: j.x.length,
     };
@@ -531,6 +755,14 @@ async function runLLMDemo() {
     out.value = 'Error: ' + e.message;
   }
 }
+
+// ---------- reveal on scroll ----------
+const io = new IntersectionObserver((entries) => {
+  for (const e of entries) {
+    if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+  }
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 
 loadStatus();
 loadBenchmarks();
