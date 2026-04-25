@@ -10,8 +10,8 @@ evolutionary optimisation (GA, PSO, NSGA-II) with three modern
 AI layers --- a neural surrogate, a reinforcement-learning
 agent, and a large-language-model warm-start designer --- into
 one reproducible system, and validates the framework against
-three canonical benchmarks: the 10-bar planar, 25-bar spatial,
-and 72-bar spatial towers.
+four canonical benchmarks: the 10-bar planar, 25-bar spatial,
+72-bar spatial tower, and 200-bar planar stepped tower.
 
 The framework matches the published optima of Sunar~\&
 Belegundu (1991) on 10-bar to \num{5061.05}~lb against the
@@ -40,7 +40,7 @@ tension, compression, and serviceability-deflection checks.
 The complete framework --- FEM solver, three optimisers,
 surrogate, PPO agent, LLM designer, IS~800 compliance
 module, FastAPI backend, and Streamlit UI --- ships as an
-open-source repository at tag \texttt{phase-8b-complete}; the
+open-source repository at tag \texttt{phase-10-complete}; the
 Streamlit demo reproduces every headline number in under ten
 seconds on a laptop CPU, with all LLM responses cached so that
 the pipeline runs offline without an Anthropic API key. The
