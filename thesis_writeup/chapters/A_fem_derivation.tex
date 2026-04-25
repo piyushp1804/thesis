@@ -1,0 +1,496 @@
+\chapter{Derivation of the Finite-Element Stiffness Method for Pin-Jointed Trusses}
+\label{app:fem}
+
+This appendix derives from first principles the finite-element
+formulation used throughout the thesis for pin-jointed steel
+trusses. The target audience is a civil-engineering reader who
+has seen structural analysis but wants to see every step that
+maps the continuum statement of equilibrium onto the matrix
+expression $\mathbf{K}\mathbf{u}=\mathbf{F}$ that our Python
+solver (\texttt{src/fem/solver.py}) actually evaluates. The
+derivation is kept dimension-agnostic so the same formulae cover
+the \num{10}-bar planar, \num{25}-bar spatial, \num{72}-bar spatial
+and \num{200}-bar planar benchmarks of \cref{chap:results}.
+
+\section{Strong Form: Equilibrium of a Pin-Jointed Truss}
+\label{app:fem:strong}
+
+A pin-jointed truss is an assembly of straight two-force members.
+Every joint is an ideal frictionless pin; moments vanish at each
+joint; and every member therefore carries only an axial force
+(pure tension or pure compression). The three physical hypotheses
+that underpin the entire chapter are:
+\begin{description}
+  \item[H1 — pure axiality.] Every member force lies along its axis.
+  \item[H2 — small strain.] Deformations are infinitesimal; geometry
+    is unchanged when writing equilibrium (first-order theory).
+  \item[H3 — linear elasticity.] Each member obeys Hooke's law with
+    a constant Young's modulus~$E$.
+\end{description}
+
+Under these hypotheses, static equilibrium of the joints is a
+purely linear-algebraic statement. Let the truss have $N$ joints.
+For any joint $p$ the vector sum of external load $\mathbf{f}_p$
+and the internal member forces $\mathbf{t}_p^{(e)}$ (contributions
+from every member $e$ incident at $p$) vanishes:
+\begin{equation}
+  \sum_{e\,\ni\,p}\mathbf{t}_p^{(e)}\;+\;\mathbf{f}_p
+  \;=\;\mathbf{0},
+  \qquad p=1,\dotsc,N.
+  \label{eq:strong_equilibrium}
+\end{equation}
+Stacking \cref{eq:strong_equilibrium} across every joint and every
+coordinate direction produces a system of $Nd$ scalar equations,
+where $d=2$ for a planar truss and $d=3$ for a spatial truss. The
+goal of the finite-element method is to re-express the left-hand
+side as $\mathbf{K}\mathbf{u}$, where $\mathbf{K}$ is a structural
+stiffness matrix depending only on geometry and material and
+$\mathbf{u}$ is the unknown nodal-displacement vector. Doing so
+reduces \cref{eq:strong_equilibrium} to
+$\mathbf{K}\mathbf{u}=\mathbf{F}$, which is what the code solves.
+
+\section{Bar Kinematics: Axial Strain from Nodal Displacements}
+\label{app:fem:kinematics}
+
+Consider a single bar $e$ connecting joints $i$ and $j$, with
+reference coordinates
+$\mathbf{x}_i,\mathbf{x}_j\in\mathbb{R}^d$. Its undeformed length is
+\begin{equation}
+  L^{(e)} = \|\mathbf{x}_j-\mathbf{x}_i\|_2
+\end{equation}
+and its undeformed axial direction is the unit vector
+\begin{equation}
+  \hat{\mathbf{n}}^{(e)}
+  = \frac{\mathbf{x}_j-\mathbf{x}_i}{L^{(e)}}.
+  \label{eq:direction_cosines}
+\end{equation}
+In 2D, $\hat{\mathbf{n}}^{(e)}=(\cos\theta,\sin\theta)^\top$; in 3D,
+$\hat{\mathbf{n}}^{(e)}=(l,m,n)^\top$ is the classical triple of
+\emph{direction cosines}. The implementation caches both $L^{(e)}$
+and $\hat{\mathbf{n}}^{(e)}$ at element construction time; see
+\texttt{TrussElement.length} and \texttt{TrussElement.direction} in
+\texttt{src/fem/truss\_element.py}.
+
+Let $\mathbf{u}_i,\mathbf{u}_j\in\mathbb{R}^d$ be the unknown
+displacement of the two end joints. Under \textbf{H2} the deformed
+length is
+\begin{equation}
+  L_{\mathrm{def}}
+  = \bigl\|(\mathbf{x}_j+\mathbf{u}_j)-(\mathbf{x}_i+\mathbf{u}_i)\bigr\|
+  = L^{(e)}\bigl(1+\varepsilon^{(e)}\bigr)+\mathcal{O}(\|\mathbf{u}\|^2),
+\end{equation}
+where the axial engineering strain is the component of the relative
+displacement along the bar:
+\begin{equation}
+  \varepsilon^{(e)}
+  \;=\;\frac{\Delta L^{(e)}}{L^{(e)}}
+  \;=\;\frac{\hat{\mathbf{n}}^{(e)}\cdot(\mathbf{u}_j-\mathbf{u}_i)}
+             {L^{(e)}}.
+  \label{eq:axial_strain}
+\end{equation}
+\Cref{eq:axial_strain} is exact to first order in $\|\mathbf{u}\|$
+and consistent with H2.
+
+It is convenient to pack the four (or six, in 3D) end-displacement
+components into a single \emph{element nodal vector}
+$\mathbf{u}^{(e)}\in\mathbb{R}^{2d}$:
+\begin{equation}
+  \mathbf{u}^{(e)}
+  \;=\;
+  \begin{pmatrix}\mathbf{u}_i\\\mathbf{u}_j\end{pmatrix}
+  \in\mathbb{R}^{2d}.
+\end{equation}
+Then \cref{eq:axial_strain} can be written as a single
+row-vector-times-column-vector contraction:
+\begin{equation}
+  \varepsilon^{(e)}
+  \;=\;\mathbf{B}^{(e)}\mathbf{u}^{(e)},
+  \qquad
+  \mathbf{B}^{(e)}
+  \;=\;\frac{1}{L^{(e)}}
+  \begin{pmatrix}-\hat{\mathbf{n}}^{(e)\top}
+                   &\hat{\mathbf{n}}^{(e)\top}\end{pmatrix}
+  \in\mathbb{R}^{1\times 2d}.
+  \label{eq:strain_displacement}
+\end{equation}
+$\mathbf{B}^{(e)}$ is the \emph{strain-displacement matrix} of the
+element. The sign pattern $(-\hat{\mathbf{n}},+\hat{\mathbf{n}})$
+reflects that pulling $j$ away from $i$ elongates the bar.
+
+\section{Linear-Elastic Constitutive Law and Internal Force}
+\label{app:fem:constitutive}
+
+By H3, Hooke's law in its one-dimensional form relates axial
+stress $\sigma^{(e)}$ to axial strain through the material
+Young's modulus $E$:
+\begin{equation}
+  \sigma^{(e)} \;=\; E\,\varepsilon^{(e)}.
+  \label{eq:hooke1d}
+\end{equation}
+The internal axial \emph{force} in the bar is the stress times
+the cross-sectional area $A^{(e)}$:
+\begin{equation}
+  N^{(e)} \;=\; A^{(e)}\sigma^{(e)}
+           \;=\; EA^{(e)}\varepsilon^{(e)}
+           \;=\; \frac{EA^{(e)}}{L^{(e)}}\,\Delta L^{(e)}.
+  \label{eq:axial_force}
+\end{equation}
+$N^{(e)}>0$ is tension, $N^{(e)}<0$ is compression. The quantity
+$k_{\mathrm{ax}}^{(e)}\equiv EA^{(e)}/L^{(e)}$ is the bar's
+\emph{axial stiffness} and plays the role of the spring constant
+for this one-dimensional sub-problem.
+
+\section{Element Stiffness Matrix via Virtual Work}
+\label{app:fem:elem_stiffness}
+
+The element-level stiffness matrix $\mathbf{k}^{(e)}$ is the
+$2d\times 2d$ symmetric matrix that maps the bar's end
+displacements $\mathbf{u}^{(e)}$ to the end forces
+$\mathbf{r}^{(e)}$ the bar exerts on the two end nodes:
+$\mathbf{r}^{(e)}=\mathbf{k}^{(e)}\mathbf{u}^{(e)}$. We derive
+it via the \emph{principle of virtual work}, which for a single
+elastic bar of length $L^{(e)}$ and area $A^{(e)}$ reads
+\begin{equation}
+  \int_0^{L^{(e)}}\!\!\sigma^{(e)}\,\delta\varepsilon^{(e)}\,A^{(e)}\,\mathrm{d}s
+  \;=\;\mathbf{r}^{(e)\top}\delta\mathbf{u}^{(e)}
+  \qquad\forall\,\delta\mathbf{u}^{(e)}.
+  \label{eq:pvw}
+\end{equation}
+Both the stress and the strain are constant along the bar under
+H1--H3, so the left-hand integral collapses:
+\begin{align}
+  \int_0^{L^{(e)}}\sigma^{(e)}\delta\varepsilon^{(e)}A^{(e)}\mathrm{d}s
+  &= A^{(e)}L^{(e)}\,\sigma^{(e)}\delta\varepsilon^{(e)}
+  \nonumber\\
+  &= A^{(e)}L^{(e)}\,E\,\varepsilon^{(e)}\delta\varepsilon^{(e)}
+  \nonumber\\
+  &= A^{(e)}L^{(e)}\,E\,
+     \bigl(\mathbf{B}^{(e)}\mathbf{u}^{(e)}\bigr)\!
+     \bigl(\mathbf{B}^{(e)}\delta\mathbf{u}^{(e)}\bigr)
+  \nonumber\\
+  &= \delta\mathbf{u}^{(e)\top}\!
+     \bigl(EA^{(e)}L^{(e)}\mathbf{B}^{(e)\top}\mathbf{B}^{(e)}\bigr)
+     \mathbf{u}^{(e)}.
+\end{align}
+Substituting \cref{eq:strain_displacement} for
+$\mathbf{B}^{(e)}$ (which contains the factor $1/L^{(e)}$ twice,
+once from $\mathbf{B}^{(e)}$ and once from $\mathbf{B}^{(e)\top}$):
+\begin{equation}
+  EA^{(e)}L^{(e)}\mathbf{B}^{(e)\top}\mathbf{B}^{(e)}
+  \;=\;\frac{EA^{(e)}}{L^{(e)}}
+  \begin{pmatrix}-\hat{\mathbf{n}}\\+\hat{\mathbf{n}}\end{pmatrix}
+  \begin{pmatrix}-\hat{\mathbf{n}}^\top & +\hat{\mathbf{n}}^\top\end{pmatrix}.
+\end{equation}
+Because \cref{eq:pvw} must hold for \emph{every} admissible
+virtual displacement $\delta\mathbf{u}^{(e)}$, the coefficient
+matrix is $\mathbf{k}^{(e)}$:
+\begin{equation}
+  \boxed{\;
+  \mathbf{k}^{(e)}
+  \;=\;\frac{EA^{(e)}}{L^{(e)}}
+  \begin{pmatrix}
+    +\hat{\mathbf{n}}\hat{\mathbf{n}}^\top & -\hat{\mathbf{n}}\hat{\mathbf{n}}^\top\\
+    -\hat{\mathbf{n}}\hat{\mathbf{n}}^\top & +\hat{\mathbf{n}}\hat{\mathbf{n}}^\top
+  \end{pmatrix}
+  \;=\;\frac{EA^{(e)}}{L^{(e)}}\,
+       \mathbf{B}^{(e)\top}\mathbf{B}^{(e)}\cdot L^{(e)\,2}\,
+  }\;
+  \label{eq:element_stiffness}
+\end{equation}
+where the last equality follows from recognising that writing
+$\mathbf{B}^{(e)}$ without the $1/L^{(e)}$ factor turns it into
+the rank-1 row vector
+$\tilde{\mathbf{B}}^{(e)}\equiv L^{(e)}\mathbf{B}^{(e)}=
+(-\hat{\mathbf{n}}^\top,\,\hat{\mathbf{n}}^\top)$ and the
+coefficient is $(EA^{(e)}/L^{(e)})\,\tilde{\mathbf{B}}^{(e)\top}
+\tilde{\mathbf{B}}^{(e)}$. In the code, the compact form
+$\mathbf{k}^{(e)}=(EA/L)\,\mathbf{B}^\top\mathbf{B}$ with
+$\mathbf{B}=(-\hat{\mathbf{n}}^\top,\,\hat{\mathbf{n}}^\top)$ is
+what appears on \texttt{truss\_element.py:152}.
+
+\paragraph{Properties of $\mathbf{k}^{(e)}$.} The element
+stiffness matrix has three properties that every implementation
+test should verify:
+\begin{enumerate}
+  \item \textbf{Symmetry.} $\mathbf{k}^{(e)}=\mathbf{k}^{(e)\top}$,
+    because $\mathbf{B}^{(e)\top}\mathbf{B}^{(e)}$ is symmetric.
+    This is physical: by Maxwell--Betti reciprocity, the force at
+    joint $i$ due to a unit displacement at $j$ equals the force
+    at $j$ due to a unit displacement at $i$.
+  \item \textbf{Positive semidefiniteness.}
+    $\mathbf{k}^{(e)}\succeq 0$, with one non-zero eigenvalue
+    $2\,EA^{(e)}/L^{(e)}$ and $2d-1$ zero eigenvalues. The non-zero
+    mode is axial stretch; the $2d-1$ zero modes are the rigid-body
+    motions (translation in each of $d$ directions and
+    $d(d-1)/2$ rigid rotations) and the purely transverse
+    relative displacements which a pin-jointed bar does not resist.
+  \item \textbf{Rank.} $\operatorname{rank}(\mathbf{k}^{(e)})=1$.
+    Consequently, a truss assembled from $M$ bars has a global
+    stiffness matrix whose rank cannot exceed $M$ before boundary
+    conditions are applied — the assembled $\mathbf{K}$ will
+    therefore in general be singular and demand support fixing
+    (\cref{app:fem:bcs}).
+\end{enumerate}
+
+\section{Assembly: Summation over Elements}
+\label{app:fem:assembly}
+
+Assembly is the step that maps element contributions into the
+global stiffness matrix. Number the joints $1,\dotsc,N$ and
+associate with joint $p$ the $d$ consecutive global degrees of
+freedom
+$\{(p-1)d+1,(p-1)d+2,\dotsc,pd\}$. For an element connecting
+joints $i,j$, the local-to-global DOF index map is the
+$2d$-tuple
+\begin{equation}
+  \mathcal{I}^{(e)}
+  =\bigl((i-1)d+1,\dotsc,id,\;(j-1)d+1,\dotsc,jd\bigr).
+\end{equation}
+The global stiffness matrix $\mathbf{K}\in\mathbb{R}^{Nd\times Nd}$
+is assembled by scattering each element contribution onto the
+rows and columns indexed by $\mathcal{I}^{(e)}$:
+\begin{equation}
+  \mathbf{K}[\mathcal{I}^{(e)},\mathcal{I}^{(e)}]
+  \;\mathrel{+}=\;\mathbf{k}^{(e)},
+  \qquad e=1,\dotsc,M.
+  \label{eq:global_assembly}
+\end{equation}
+In our code (\texttt{src/fem/assembly.py:114}) the scatter is
+implemented with \texttt{np.ix\_(dofs,dofs)} so the inner loop is
+one line. $\mathbf{K}$ inherits three properties directly from
+the element contributions:
+\begin{itemize}
+  \item symmetric ($\mathbf{k}^{(e)}=\mathbf{k}^{(e)\top}\;\forall\,e$);
+  \item sparse (each bar scatters into only $(2d)^2$ entries,
+        so average fill is $\mathcal{O}(M/N^2)$ which is tiny for
+        triangulated trusses);
+  \item positive semidefinite, with null space containing the
+        rigid-body motions of the whole structure
+        ($d$ translations and $d(d-1)/2$ rotations, giving a
+        null-space dimension of $d(d+1)/2$).
+\end{itemize}
+
+\paragraph{Load vector.} The external loading is applied at the
+joints. Defining $\mathbf{f}_p\in\mathbb{R}^d$ as the external
+force at joint $p$, the global load vector is simply
+\begin{equation}
+  \mathbf{F}\;=\;
+  \bigl(\mathbf{f}_1^\top,\mathbf{f}_2^\top,\dotsc,\mathbf{f}_N^\top\bigr)^\top
+  \;\in\;\mathbb{R}^{Nd}.
+\end{equation}
+Self-weight is included by adding half the weight of each
+incident member to each end joint, a lumped-mass distribution
+that is exact under H1--H3 because bar forces are assumed
+uniform.
+
+\section{Boundary Conditions: Partition Method}
+\label{app:fem:bcs}
+
+Before boundary conditions the unassembled system
+\begin{equation}
+  \mathbf{K}\mathbf{u}\;=\;\mathbf{F}
+\end{equation}
+has no unique solution: $\mathbf{K}$ has a null space of dimension
+$d(d+1)/2$ (see \cref{app:fem:assembly}), so for any particular
+solution $\mathbf{u}^\ast$ we may add any rigid-body motion and
+still satisfy the equation. Support conditions restore
+uniqueness. Let
+\begin{equation}
+  \mathcal{F}=\{\text{free DOFs}\},\qquad
+  \mathcal{S}=\{\text{prescribed DOFs}\},\qquad
+  \mathcal{F}\cup\mathcal{S}=\{1,\dotsc,Nd\},\quad
+  \mathcal{F}\cap\mathcal{S}=\varnothing.
+\end{equation}
+Partitioning $\mathbf{u}$ and $\mathbf{F}$ accordingly and
+writing $\mathbf{K}$ in block form
+\begin{equation}
+  \begin{pmatrix}\mathbf{K}_{\mathcal{F}\mathcal{F}}&\mathbf{K}_{\mathcal{F}\mathcal{S}}\\
+                 \mathbf{K}_{\mathcal{S}\mathcal{F}}&\mathbf{K}_{\mathcal{S}\mathcal{S}}\end{pmatrix}
+  \begin{pmatrix}\mathbf{u}_{\mathcal{F}}\\\mathbf{u}_{\mathcal{S}}\end{pmatrix}
+  \;=\;
+  \begin{pmatrix}\mathbf{F}_{\mathcal{F}}\\\mathbf{F}_{\mathcal{S}}\end{pmatrix},
+  \label{eq:partition_system}
+\end{equation}
+and using the prescribed support displacements
+$\mathbf{u}_{\mathcal{S}}$ (commonly zero for pinned supports), we
+solve for the unknown free-DOF displacements by reducing
+\cref{eq:partition_system}:
+\begin{equation}
+  \boxed{\;
+  \mathbf{K}_{\mathcal{F}\mathcal{F}}\,\mathbf{u}_{\mathcal{F}}
+  \;=\;\mathbf{F}_{\mathcal{F}}-\mathbf{K}_{\mathcal{F}\mathcal{S}}\mathbf{u}_{\mathcal{S}}
+  \;}
+  \label{eq:reduced_system}
+\end{equation}
+which is a well-posed symmetric positive-definite linear system
+provided the supports remove all rigid-body modes. For the
+standard zero-prescribed-displacement case (a pinned or roller
+support) \cref{eq:reduced_system} collapses to
+$\mathbf{K}_{\mathcal{F}\mathcal{F}}\mathbf{u}_{\mathcal{F}}=\mathbf{F}_{\mathcal{F}}$.
+
+The minimum number of DOFs to pin is
+\begin{equation}
+  |\mathcal{S}|_{\min}\;=\;\tfrac{d(d+1)}{2}
+  \;=\;\begin{cases}3 & d=2\\6 & d=3\end{cases}.
+\end{equation}
+A 2D truss therefore needs at least one pin (two DOFs) plus one
+roller (one DOF); a 3D truss needs a full pin and enough
+additional roller DOFs to kill the three rotations. In our code
+(\texttt{src/fem/solver.py:88}) failure to pin this minimum is
+caught explicitly, and an under-constrained structure yields the
+\texttt{LinAlgError: Singular matrix} that
+\cref{eq:reduced_system} would otherwise produce only after a
+solver attempt.
+
+\paragraph{Reactions.} Once $\mathbf{u}_{\mathcal{F}}$ is known,
+the reactions at supports follow from the second row of
+\cref{eq:partition_system}:
+\begin{equation}
+  \mathbf{R}_{\mathcal{S}}
+  \;=\;\mathbf{K}_{\mathcal{S}\mathcal{F}}\mathbf{u}_{\mathcal{F}}
+  +\mathbf{K}_{\mathcal{S}\mathcal{S}}\mathbf{u}_{\mathcal{S}}
+  -\mathbf{F}_{\mathcal{S}},
+  \label{eq:reactions}
+\end{equation}
+which the solver returns alongside the displacements for
+post-processing and as a global-equilibrium sanity check.
+
+\section{Post-Processing: Stress, Axial Force, and Equilibrium}
+\label{app:fem:postprocess}
+
+After the reduced system is solved, the full displacement vector
+$\mathbf{u}\in\mathbb{R}^{Nd}$ is known; stresses, strains and
+member forces are recovered element by element:
+\begin{enumerate}
+  \item \textbf{Extract element displacements.} For element $e$
+    pick out the $2d$ components
+    $\mathbf{u}^{(e)}=\mathbf{u}[\mathcal{I}^{(e)}]$.
+  \item \textbf{Axial strain} from
+    \cref{eq:strain_displacement}:
+    $\varepsilon^{(e)}=\mathbf{B}^{(e)}\mathbf{u}^{(e)}
+    =\hat{\mathbf{n}}^{(e)}\!\cdot\!(\mathbf{u}_j-\mathbf{u}_i)/L^{(e)}$.
+  \item \textbf{Axial stress} from \cref{eq:hooke1d}:
+    $\sigma^{(e)}=E\,\varepsilon^{(e)}$.
+  \item \textbf{Axial force} from \cref{eq:axial_force}:
+    $N^{(e)}=A^{(e)}\sigma^{(e)}$.
+\end{enumerate}
+All four quantities are scalars; their sign convention is
+``tension positive''.
+
+\paragraph{Global equilibrium check.} A good implementation
+verifies at post-processing time that
+\begin{equation}
+  \sum_{p\in\mathcal{S}}\mathbf{R}_p + \sum_{p=1}^{N}\mathbf{f}_p
+  \;=\;\mathbf{0}
+  \label{eq:global_equilibrium}
+\end{equation}
+to machine precision. Violations flag integration mistakes in
+the load vector, forgotten supports, or incorrectly scattered
+element contributions. Our unit test
+\texttt{tests/test\_fem\_3bar.py} includes this check.
+
+\paragraph{Linear-elastic assumptions and their scope.} The
+derivation above is exact under H1--H3. In the thesis
+benchmarks, H1 and H2 are introduced axiomatically by the
+problem statements (every published truss optimum of
+\cref{chap:results} uses the same assumptions). H3 is the only
+one that can be challenged post-hoc: non-linearity shows up in
+two forms:
+\begin{itemize}
+  \item \textbf{Material non-linearity}: yielding in steel beyond
+    the elastic limit $f_y$. This is \emph{not} captured by
+    \cref{eq:hooke1d}. For the IS~800 compliance study of
+    \cref{sec:results:is800}, the tension-yield stress limit
+    is enforced as an \emph{inequality constraint}
+    $|\sigma^{(e)}|\le f_y$, not as a change of constitutive
+    law, so linear elasticity remains the valid operating
+    assumption throughout the optimiser's search space.
+  \item \textbf{Geometric non-linearity}: buckling of slender
+    compression members. \Cref{eq:strong_equilibrium} is the
+    first-order form; it does not predict bifurcation. We
+    therefore do not use the FEM to decide buckling: the IS~800
+    buckling curve gives a closed-form compression capacity
+    $P_d$ and the optimiser enforces $|N^{(e)}|\le P_d$ directly
+    on element compression forces
+    (\cref{sec:results:is800}).
+\end{itemize}
+Both exclusions are standard in the benchmark literature
+~\cite{subramanian2008,is800-2007} and are faithfully reflected
+in the constraint module \texttt{src/constraints/is800\_checks.py}.
+
+\section{End-to-End Worked Example}
+\label{app:fem:worked}
+
+To ground the general derivation, we work through the single
+horizontal bar in \texttt{src/fem/solver.py:147}. A bar of length
+$L=\SI{1}{m}$ connects joint~$1$ at $(0,0)$ and joint~$2$ at
+$(1,0)$, with $E=\SI{200}{GPa}$ and
+$A=\SI{1e-4}{m^2}$. Joint~$1$ is fully pinned ($\mathcal{S}\supset\{1,2\}$)
+and joint~$2$ carries an in-plane horizontal load $F_{2x}=\SI{1000}{N}$.
+The $y$-DOF of joint~$2$ (DOF index $4$) must also be pinned to
+remove the transverse zero mode of a single bar in 2D.
+
+\emph{Step 1 --- Direction cosines and $\mathbf{B}^{(e)}$:}
+$\hat{\mathbf{n}}=(1,0)^\top$, so
+$\mathbf{B}^{(e)}=L^{-1}(-1,0,1,0)=(-1,0,1,0)$.
+
+\emph{Step 2 --- Element stiffness:}
+\[
+  \mathbf{k}^{(e)}
+  =\frac{EA}{L}\mathbf{B}^{(e)\top}\mathbf{B}^{(e)}
+  =\SI{2e7}{N/m}\begin{pmatrix}
+    +1 & 0 & -1 & 0\\ 0 & 0 & 0 & 0\\
+    -1 & 0 & +1 & 0\\ 0 & 0 & 0 & 0
+  \end{pmatrix}.
+\]
+With only one element $\mathbf{K}=\mathbf{k}^{(e)}$.
+
+\emph{Step 3 --- Partition:} the free set is
+$\mathcal{F}=\{3\}$ (the horizontal DOF of joint~$2$); the
+prescribed set is $\mathcal{S}=\{1,2,4\}$ with
+$\mathbf{u}_{\mathcal{S}}=\mathbf{0}$.
+$\mathbf{K}_{\mathcal{F}\mathcal{F}}=\SI{2e7}{N/m}$,
+$\mathbf{F}_{\mathcal{F}}=\SI{1000}{N}$.
+
+\emph{Step 4 --- Solve reduced system}
+\cref{eq:reduced_system}:
+$u_{2x}=\SI{1000}{N}/\SI{2e7}{N/m}=\SI{5e-5}{m}=\SI{50}{\micro\metre}$.
+
+\emph{Step 5 --- Axial strain, stress, force:}
+$\varepsilon=\SI{5e-5}{\per\metre}\cdot L=\num{5e-5}$,
+$\sigma=E\varepsilon=\SI{10}{MPa}$,
+$N=A\sigma=\SI{1000}{N}$ (tension).
+
+\emph{Step 6 --- Reaction at joint 1:} from
+\cref{eq:reactions}, $R_{1x}=-\SI{1000}{N}$, satisfying
+global equilibrium to machine precision.
+
+Every step above appears identically in
+\texttt{src/fem/solver.py}'s
+\texttt{if \_\_name\_\_==\"\_\_main\_\_\"} block, and its
+assertion $u_{2x}=\SI{5e-5}{m}$ is the simplest validation gate
+of the FEM stack.
+
+\section{Notation Summary}
+\label{app:fem:notation}
+
+\begin{tabular}{@{}l l l@{}}
+  \toprule
+  Symbol & Meaning & Units \\
+  \midrule
+  $d$ & spatial dimension (2 or 3) & --- \\
+  $N$ & number of joints & --- \\
+  $M$ & number of bars & --- \\
+  $E$ & Young's modulus of steel & Pa \\
+  $A^{(e)}$ & cross-sectional area of bar $e$ & $\mathrm{m}^2$ \\
+  $L^{(e)}$ & undeformed length of bar $e$ & m \\
+  $\hat{\mathbf{n}}^{(e)}$ & unit direction vector of bar $e$ & --- \\
+  $\mathbf{B}^{(e)}$ & strain-displacement matrix of bar $e$ ($1\!\times\!2d$) & $\mathrm{m}^{-1}$ \\
+  $\mathbf{k}^{(e)}$ & element stiffness matrix ($2d\!\times\!2d$) & N/m \\
+  $\mathbf{K}$ & global stiffness matrix ($Nd\!\times\!Nd$) & N/m \\
+  $\mathbf{u}$ & nodal-displacement vector & m \\
+  $\mathbf{F}$ & nodal-force vector & N \\
+  $\varepsilon^{(e)},\sigma^{(e)},N^{(e)}$ & element axial strain, stress, force & ---, Pa, N \\
+  $\mathcal{F},\mathcal{S}$ & free / prescribed DOF sets & --- \\
+  \bottomrule
+\end{tabular}

@@ -1,0 +1,365 @@
+\chapter{IS 800:2007 Provisions Applied to Truss Members}
+\label{app:is800}
+
+This appendix states, derives where necessary, and discusses the
+specific clauses of IS~800:2007~\cite{is800-2007} that the
+constraint module \texttt{src/constraints/is800\_checks.py}
+enforces on every truss candidate. The thesis proper
+(\cref{sec:results:is800}) reports the numerical consequences of
+these checks; this appendix documents the underlying code of practice
+so a reviewer can verify formula-by-formula correspondence.
+
+All formulae are written in SI units; truss benchmarks published
+in imperial units (10-bar, 25-bar, 72-bar) are converted to SI
+inside the caller before these provisions are evaluated.
+
+\section{Scope, Material Constants, and Safety Factors}
+\label{app:is800:scope}
+
+IS~800:2007 is the Indian limit-state design code for general
+construction in steel. The limit states considered for truss
+members are:
+\begin{itemize}
+  \item \textbf{ultimate}: tension yielding (Clause 6.2), tension
+        rupture (Clause 6.3), and compression buckling
+        (Clause 7.1);
+  \item \textbf{stability}: slenderness limits (Clause 3.8);
+  \item \textbf{serviceability}: deflection limits
+        (Clause 5.6.1).
+\end{itemize}
+The three remaining limit states that IS~800 lists
+(fatigue, brittle fracture, fire) are not applicable to the
+thesis benchmarks and are therefore not enforced.
+
+\subsection{Default Material: Fe~410}
+\label{app:is800:fe410}
+
+The thesis uses \emph{structural steel grade Fe~410} throughout
+(the default grade of IS~2062 for general construction). Its
+characteristic strengths are:
+\begin{equation}
+  f_y = \SI{250}{MPa},
+  \qquad
+  f_u = \SI{410}{MPa},
+  \qquad
+  E = \SI{2.0e11}{Pa}.
+\end{equation}
+These values are hard-coded as \texttt{FY\_DEFAULT}/\texttt{FU\_DEFAULT}
+in \texttt{is800\_checks.py} and can be over-ridden per-call by
+the kwargs \texttt{fy}, \texttt{fu}.
+
+\subsection{Partial Safety Factors}
+\label{app:is800:gamma}
+
+IS~800 Table~5 distinguishes two partial safety factors on
+material resistance that are relevant to tension and compression
+members:
+\begin{equation}
+  \gamma_{m0} = \num{1.10}
+  \quad\text{(yielding at gross section)},
+  \qquad
+  \gamma_{m1} = \num{1.25}
+  \quad\text{(ultimate at net section or in buckling)}.
+\end{equation}
+All reported resistances in this appendix are \emph{design}
+resistances that already incorporate the relevant $\gamma_m$.
+The optimiser treats member demand $N^{(e)}$ as the signed
+factored axial force from the FEM and compares it directly against
+these design resistances.
+
+\subsection{Cross-Section Assumption: Solid Circular}
+\label{app:is800:section}
+
+Every bar in the thesis benchmarks is modelled as a solid circular
+cross-section of area $A^{(e)}$. This reduces the number of
+design variables from three (area + a shape descriptor pair) to
+one (area alone) --- a modelling choice that matches the original
+Kaveh benchmark conventions~\cite{kaveh2010} and makes reported
+areas directly comparable with the published literature. For a
+solid disc of area $A$ and radius $R=\sqrt{A/\pi}$,
+the \emph{second moment of area} is $I=\pi R^4/4$ and the
+\emph{radius of gyration} is:
+\begin{equation}
+  r_g \;=\; \sqrt{\frac{I}{A}} \;=\; \frac{R}{2}
+  \;=\; \frac{1}{2}\sqrt{\frac{A}{\pi}}.
+  \label{eq:is800:rg}
+\end{equation}
+Implementation: \texttt{radius\_of\_gyration\_circular} at
+\texttt{is800\_checks.py:52}. A future extension to rolled tubes
+or angles is a single-function override.
+
+\section{Clause 3.8 --- Slenderness Limits}
+\label{app:is800:clause3_8}
+
+For any truss member the effective slenderness ratio is
+\begin{equation}
+  \lambda \;=\; \frac{K L}{r_g},
+  \label{eq:is800:slenderness}
+\end{equation}
+where $K$ is the \emph{effective length factor} (theoretical pin-pin
+ends give $K=\num{1.0}$, which is the value used throughout) and
+$r_g$ is the radius of gyration from
+\cref{eq:is800:rg}. IS~800 Table~3 places separate limits for
+primary members on tension and compression:
+\begin{equation}
+  \lambda \le
+  \begin{cases}
+    \num{180} & \text{tension member}, \\
+    \num{250} & \text{compression member}.
+  \end{cases}
+  \label{eq:is800:slend_limits}
+\end{equation}
+The tension limit is a constructibility / serviceability
+requirement (to prevent sag under self-weight of long tension
+ties); the compression limit is a stability requirement (long
+compression members have residual imperfection amplitudes that
+make design-office analysis unreliable above $\lambda\sim 250$).
+
+Implementation: \texttt{check\_slenderness} at
+\texttt{is800\_checks.py:65}. The constraint is enforced as
+\emph{hard} (any violation marks the design infeasible); a
+\num{1}-percent tolerance is applied as standard in the penalty
+function to avoid knife-edge infeasibility on floating-point
+evaluation.
+
+\section{Clause 6.2 --- Tension Capacity, Gross-Section Yielding}
+\label{app:is800:clause6_2}
+
+A tension member first yields over its gross cross-sectional area
+when the demand reaches
+\begin{equation}
+  T_{dg} \;=\; \frac{A_g\,f_y}{\gamma_{m0}}.
+  \label{eq:is800:Tdg}
+\end{equation}
+$A_g$ is the gross area ($=A^{(e)}$ for the welded-end solid-bar
+members used in the thesis). For Fe~410,
+$T_{dg}/A_g = \SI{227.27}{MPa}$, a quantity that appears as a
+horizontal line on every stress-versus-axial-force plot in
+\cref{chap:results} where IS~800 is switched on.
+
+For benchmarks without an IS~800 layer (the bare Kaveh-style
+stress cap of the 10-, 25- and 72-bar problems) the admissible
+tension stress is the standard $f_y=\SI{250}{MPa}$ applied
+without the factor $1/\gamma_{m0}$. This difference accounts for
+most of the weight penalty that IS~800 inclusion introduces in
+\cref{sec:results:ablation:is800} --- not the compression
+buckling curve, as one might first assume.
+
+\section{Clause 6.3 --- Tension Capacity, Net-Section Rupture}
+\label{app:is800:clause6_3}
+
+Where a tension member is bolt-connected, the net area $A_n$ is
+the gross area minus the bolt-hole deductions. IS~800 gives the
+ultimate net-section rupture capacity as
+\begin{equation}
+  T_{dn} \;=\; \frac{0.9\,A_n\,f_u}{\gamma_{m1}}.
+  \label{eq:is800:Tdn}
+\end{equation}
+The factor \num{0.9} is an empirical allowance for eccentricity
+and shear lag at the end connection. For welded-end members
+(the thesis default), $A_n = A_g$ and
+\cref{eq:is800:Tdn} simplifies to
+$T_{dn}=0.9 A_g f_u/\gamma_{m1}=\SI{295.2}{MPa}\cdot A_g$. This
+exceeds $T_{dg}$ for Fe~410, so \cref{eq:is800:Tdg} is the
+binding tension-capacity constraint for welded-end members. In
+bolt-connected benchmarks it is necessary to check both.
+
+Implementation: \texttt{check\_tension\_rupture} at
+\texttt{is800\_checks.py:114}, kwarg
+\texttt{net\_area\_ratio} defaults to \num{1.0} (welded ends).
+
+\section{Clause 7.1 --- Compression Capacity (Perry-Robertson)}
+\label{app:is800:clause7_1}
+
+IS~800 Clause 7.1.2 gives the design compressive stress
+$f_{cd}$ as a reduced yield strength
+\begin{equation}
+  f_{cd} \;=\; \chi\,\frac{f_y}{\gamma_{m0}},
+  \qquad 0<\chi\le 1,
+  \label{eq:is800:fcd}
+\end{equation}
+where the reduction factor $\chi$ is the closed-form
+Perry-Robertson expression adopted from Eurocode~3:
+\begin{equation}
+  \chi \;=\; \frac{1}{\varphi + \sqrt{\varphi^2-\overline{\lambda}^2}},
+  \qquad
+  \varphi \;=\;
+    \tfrac{1}{2}\bigl[\,
+      1 + \alpha\bigl(\overline{\lambda}-\num{0.2}\bigr)
+        + \overline{\lambda}^{2}
+    \,\bigr],
+  \label{eq:is800:chi}
+\end{equation}
+and the \emph{non-dimensional slenderness} $\overline{\lambda}$ is
+the ratio of yield-stress to elastic-buckling-stress half-powered:
+\begin{equation}
+  \overline{\lambda}
+  \;=\;\sqrt{\frac{f_y}{f_{cc}}},
+  \qquad
+  f_{cc} \;=\;\frac{\pi^2 E}{(KL/r_g)^2}.
+  \label{eq:is800:lambda_bar}
+\end{equation}
+$f_{cc}$ is the Euler critical stress for an ideally straight
+elastic pinned-pinned column; $\overline{\lambda}\to 0$ recovers
+$\chi=1$ (unreduced yield), and $\overline{\lambda}\to\infty$
+recovers $\chi=1/\overline{\lambda}^2$ (elastic Euler-buckling
+limit).
+
+The design compressive \emph{force} resistance is then
+\begin{equation}
+  P_d \;=\; A^{(e)}\,f_{cd}.
+  \label{eq:is800:Pd}
+\end{equation}
+Implementation: \texttt{check\_compression} at
+\texttt{is800\_checks.py:140}. In the penalty function,
+$|N^{(e)}_{\text{compression}}|\le P_d$ is enforced with the
+same \num{1}-percent tolerance as the tension check.
+
+\subsection{Choice of Buckling Curve}
+\label{app:is800:clause7_1:curve}
+
+IS~800 Table~7 distinguishes four buckling-curve variants
+$(\mathrm{a},\mathrm{b},\mathrm{c},\mathrm{d})$ via the
+imperfection factor $\alpha$:
+\begin{equation}
+  \alpha \in \{\num{0.21},\num{0.34},\num{0.49},\num{0.76}\}
+  \quad\text{for curves}\quad
+  (\mathrm{a},\mathrm{b},\mathrm{c},\mathrm{d}).
+\end{equation}
+The curve to use depends on the cross-section geometry and the
+buckling axis; IS~800 Table~7 is the authoritative mapping. For
+the thesis solid-circular cross-section, Table~7 does not
+explicitly enumerate an entry (the code tabulates rolled I, H,
+angle, channel, tubular, and welded box sections). The
+closest physical match is a rolled tubular section, which
+Table~7 places on curve~\mbox{\emph{a}} ($\alpha=\num{0.21}$).
+However, thesis results use curve~\mbox{\emph{b}}
+($\alpha=\num{0.34}$) as a conservative middle-ground choice:
+this matches the recommendation of
+Subramanian~\cite{subramanian2008} for ``general-purpose
+welded solid bars'' and errs on the safe side. Switching to
+curve~\mbox{\emph{a}} is a one-line override
+(\texttt{alpha=0.21}) in \texttt{check\_compression} and
+typically lowers the optimised weight by $\num{1}$--$\num{3}\,\%$
+on the benchmarks of
+\cref{sec:results:ablation:is800}.
+
+\subsection{Closed-Form Bounds on $\chi$}
+\label{app:is800:chi_bounds}
+
+Two trivial properties of \cref{eq:is800:chi} help debugging:
+\begin{itemize}
+  \item $\chi\le 1$ always, enforced explicitly in
+    \texttt{is800\_checks.py:163} by a \texttt{min(chi,1.0)}.
+    Without this clip, very-low-slenderness
+    ($\overline{\lambda}\to 0$) cases can produce
+    numerically-slightly-greater-than-unity $\chi$ due to
+    round-off in $\sqrt{\varphi^2-\overline{\lambda}^2}$.
+  \item $\chi > 0$ always, because $\varphi>\overline{\lambda}$
+    for all $\overline{\lambda}>0$ and $\alpha>0$.
+\end{itemize}
+In the IS~800 study of
+\cref{sec:results:is800}, the reported median $\chi$ values on
+the 10-bar compression members are
+$\chi\in[\num{0.42},\num{0.88}]$; a purely-yielding material
+model would correspond to $\chi\equiv 1$, which is why
+including IS~800 increases optimised weight.
+
+\section{Clause 5.6.1 --- Serviceability Deflection Limit}
+\label{app:is800:clause5_6_1}
+
+IS~800 Clause 5.6.1 caps the maximum deflection of a structure
+under its characteristic service load:
+\begin{equation}
+  \delta_{\max} \;\le\; \frac{L_{\mathrm{span}}}{325},
+  \label{eq:is800:deflection}
+\end{equation}
+where the divisor \num{325} is the Table~6 default for
+\emph{roof purlins and girts}; for typical rafters the divisor is
+\num{240}, for cantilevers \num{150}, and for gantry girders
+\num{750}. The thesis uses \num{325} as a generic default
+because the benchmark loads are classical gravity loads and the
+benchmark geometries are roof-truss-like. The divisor is a kwarg
+(\texttt{divisor}) of \texttt{check\_deflection} and is over-ridable
+per call without recompiling any higher-level code.
+
+\paragraph{Observation.} For the specific Kaveh 10-bar geometry
+($L_{\mathrm{span}}=\SI{720}{in}=\SI{18.3}{m}$), the IS~800
+serviceability deflection limit at divisor~\num{325} is
+$\delta_{\max}=\SI{56.3}{mm}$. The benchmark's original
+Imperial-unit problem statement fixes the tip deflection limit
+at \num{2.0}~in $=\SI{50.8}{mm}$, which is \emph{tighter} than
+IS~800 serviceability would require. The 10-bar displacement
+constraint therefore remains the binding serviceability check
+in practice.
+
+\section{Compliance Matrix: Code Checks per Benchmark}
+\label{app:is800:matrix}
+
+\Cref{tab:is800_matrix} summarises which of the above clauses is
+enforced in each benchmark. Benchmarks whose original problem
+statement already caps a stress or a deflection are kept in their
+original units and limit unless the IS~800 ablation is
+specifically switched on.
+
+\begin{table}[h]
+  \centering
+  \caption{Per-benchmark IS~800 coverage. $\checkmark$ means the
+    clause is enforced by default; ``--'' means the benchmark's
+    original non-IS~800 limit is kept; ``opt.'' means IS~800 is
+    enabled only for the ablation in
+    \cref{sec:results:ablation:is800}.}
+  \label{tab:is800_matrix}
+  \begin{tabular}{l c c c c c}
+    \toprule
+    Clause / Benchmark & 10-bar & 25-bar & 72-bar & 200-bar & Notes \\
+    \midrule
+    3.8 slenderness       & opt. & opt. & opt. & \checkmark & 200-bar SI units \\
+    6.2 tension yield     & opt. & opt. & opt. & \checkmark &  \\
+    6.3 tension rupture   & opt. & opt. & opt. & \checkmark & welded ends \\
+    7.1 compression       & opt. & opt. & opt. & \checkmark & curve~b default \\
+    5.6.1 deflection      & --   & --   & --   & \checkmark & divisor~325 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The 200-bar stepped-tower benchmark is the only one specified
+natively in SI units and is therefore the only benchmark whose
+default configuration has IS~800 fully engaged.
+
+\section{Validation: Worked Numerical Check}
+\label{app:is800:validation}
+
+As a spot-check that \cref{eq:is800:chi}--\cref{eq:is800:Pd} is
+implemented correctly, consider a single \num{2.0}-m solid-circular
+bar of area $A=\SI{5e-4}{m^2}$ (diameter $\approx\SI{25.2}{mm}$)
+under compression. Step-by-step:
+\begin{align*}
+  r_g &= \tfrac{1}{2}\sqrt{A/\pi}
+       = \tfrac{1}{2}\sqrt{\SI{5e-4}{m^2}/\pi}
+       = \SI{6.3e-3}{m}, \\
+  \lambda &= KL/r_g = \SI{2.0}{m}/\SI{6.3e-3}{m} = \num{317.5}, \\
+  f_{cc}  &= \pi^2 E / \lambda^2
+          = \pi^2\cdot\SI{2.0e11}{Pa}/\num{317.5}^2
+          = \SI{1.96e7}{Pa}, \\
+  \overline{\lambda} &= \sqrt{f_y/f_{cc}}
+          = \sqrt{\SI{2.5e8}{Pa}/\SI{1.96e7}{Pa}}
+          = \num{3.57}, \\
+  \varphi &= \tfrac{1}{2}\bigl[1+\num{0.34}(\num{3.57}-\num{0.2})+\num{3.57}^2\bigr]
+          = \num{7.45}, \\
+  \chi    &= \bigl[\num{7.45}+\sqrt{\num{7.45}^2-\num{3.57}^2}\bigr]^{-1}
+          = \num{0.073}, \\
+  f_{cd}  &= \chi f_y/\gamma_{m0}
+          = \num{0.073}\cdot\SI{2.5e8}{Pa}/\num{1.1}
+          = \SI{1.65e7}{Pa}, \\
+  P_d     &= A\,f_{cd}
+          = \SI{5e-4}{m^2}\cdot\SI{1.65e7}{Pa}
+          = \SI{8.27e3}{N}.
+\end{align*}
+The slenderness is well above the \num{250}-limit, so the
+Clause~3.8 check \emph{fails first}; a compliant cross-section
+would need a larger radius of gyration. This is exactly the
+behaviour observed on the 200-bar optimiser runs in
+\cref{sec:results:200bar}, where small-area members at the tower
+top are driven by the \num{250} compression-slenderness limit
+rather than by the Perry-Robertson capacity.

@@ -1,0 +1,356 @@
+\chapter{Geometry, Loading, and Design-Variable Specifications}
+\label{app:geom}
+
+This appendix lists the full numerical specification of each of
+the four benchmarks used in \cref{chap:results}: nodal
+coordinates, element connectivity, supports, load cases, material
+constants, allowable displacements, stress limits, design-variable
+groupings, and published reference optima. All values are quoted
+in the benchmark's original units, which are preserved inside the
+code to match the literature exactly; the 200-bar benchmark is the
+only one natively specified in SI. Each table's \texttt{label}
+mirrors the structure \verb|tab:geom:<bench>:<aspect>|.
+
+\paragraph{Notation.} For every benchmark the design-variable
+vector is denoted $\mathbf{a}\in\mathbb{R}^{n_{\mathrm{dv}}}$,
+with each component an \emph{area group} parameter. The mapping
+from group index to physical bar index is the
+\emph{group-map}, stored as \texttt{group\_map} on each benchmark
+class. An area-group of size $\ge 2$ ties the areas of multiple
+bars together (typical in symmetric trusses). In every benchmark
+the area is the only design-variable type --- sizing optimisation
+only, no topology or shape modifications.
+
+\section{10-bar Planar Cantilever}
+\label{app:geom:10bar}
+
+The 10-bar planar cantilever of
+Haftka and G\"urdal~\cite{haftka_gurdal1992} is the oldest
+benchmark in the sizing-optimisation literature and is
+accordingly the most reported. It comprises six nodes arranged
+as a $3\times 2$ rectangular grid; the two left-most nodes are
+pinned supports, and two downward tip loads are applied at the
+two right-most free nodes.
+
+\begin{table}[h]
+  \centering
+  \small
+  \caption{10-bar: nodal coordinates (inches). All nodes lie in
+    the $xy$-plane.}
+  \label{tab:geom:10bar:nodes}
+  \begin{tabular}{rrr}
+  \toprule
+  Node & $X$ (in) & $Y$ (in) \\
+  \midrule
+  1 & 720 & 360 \\
+  2 & 720 & 0 \\
+  3 & 360 & 360 \\
+  4 & 360 & 0 \\
+  5 & 0   & 360 \\
+  6 & 0   & 0   \\
+  \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[h]
+  \centering
+  \small
+  \caption{10-bar: element connectivity. Bar numbering follows
+    the Haftka--G\"urdal convention.}
+  \label{tab:geom:10bar:conn}
+  \begin{tabular}{rrr}
+  \toprule
+  Bar & Node $i$ & Node $j$ \\
+  \midrule
+  1 & 5 & 3 \\ 2 & 3 & 1 \\ 3 & 6 & 4 \\ 4 & 4 & 2 \\ 5 & 3 & 4 \\
+  6 & 1 & 2 \\ 7 & 4 & 5 \\ 8 & 3 & 6 \\ 9 & 2 & 3 \\ 10 & 1 & 4 \\
+  \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Supports.} Nodes~5 and~6 are fully pinned (both $x$ and
+$y$ DOFs fixed). All other nodes are free. The minimum pin count
+($d(d+1)/2=3$ in 2D) is exceeded, so the structure is statically
+indeterminate to first degree~\cite{subramanian2008}.
+
+\paragraph{Loading.} A single load case is specified:
+\textbf{LC1} applies a downward force of
+$F_y=-\SI{100}{kip}=-\SI{100e3}{lb}$ at both node~2 and node~4.
+
+\paragraph{Design variables.} $n_{\mathrm{dv}}=10$ --- every bar
+is its own independent area variable. The area-group map is the
+identity $g(i)=i$ for $i=1,\dotsc,10$.
+
+\paragraph{Limits.} Side bounds on area:
+$\num{0.1}\le a_i\le\SI{35.0}{in^2}$. Allowable displacement at
+every free DOF: $|u|\le\SI{2.0}{in}$. Allowable axial stress:
+$|\sigma|\le\SI{25}{ksi}=\SI{25e3}{psi}$ in both tension and
+compression. Material: $E=\SI{10}{Msi}=\SI{10e6}{psi}$,
+$\rho=\SI{0.1}{lb/in^3}$.
+
+\paragraph{Reference optimum.} The canonical optimum weight
+reported by Kaveh~\cite{kaveh2010} is $W^\star=\SI{5060.85}{lb}$;
+our PSO reproduces this to within $\pm\SI{0.05}{lb}$ across 30
+seeds (\cref{sec:results:10bar}).
+
+\section{25-bar Spatial Transmission Tower}
+\label{app:geom:25bar}
+
+The 25-bar spatial transmission tower is a $d=3$ dimensional
+benchmark with two stacked frustra. Ten nodes and twenty-five
+bars are grouped into eight symmetric area groups. Two load
+cases capture asymmetric and anti-symmetric wind actions.
+
+\begin{table}[h]
+  \centering
+  \small
+  \caption{25-bar: nodal coordinates (inches).}
+  \label{tab:geom:25bar:nodes}
+  \begin{tabular}{rrrr}
+  \toprule
+  Node & $X$ & $Y$ & $Z$ \\
+  \midrule
+  1 & -37.5 &  0.0 & 200 \\
+  2 &  37.5 &  0.0 & 200 \\
+  3 & -37.5 &  37.5 & 100 \\
+  4 &  37.5 &  37.5 & 100 \\
+  5 &  37.5 & -37.5 & 100 \\
+  6 & -37.5 & -37.5 & 100 \\
+  7 & -100  &  100  &   0 \\
+  8 &  100  &  100  &   0 \\
+  9 &  100  & -100  &   0 \\
+  10 & -100 & -100  &   0 \\
+  \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Supports.} Nodes 7--10 are fully pinned ($u=v=w=0$),
+giving 12 prescribed DOFs and $10\cdot 3-12=18$ free DOFs.
+
+\paragraph{Connectivity.} Bars are listed in groups reflecting
+the physical role of each bar family. The 25 bars are assigned
+to 8 area groups as follows:
+\begin{center}
+\small
+\begin{tabular}{ll}
+  \toprule
+  Group & Bar numbers (1-indexed) \\
+  \midrule
+  1 (top strut)           & 1 \\
+  2 (upper inclined)      & 2--5 \\
+  3 (waist horizontal)    & 6--9 \\
+  4 (mid vertical)        & 10--11 \\
+  5 (inner diagonal)      & 12--13 \\
+  6 (outer upper)         & 14--17 \\
+  7 (outer middle)        & 18--21 \\
+  8 (outer lower)         & 22--25 \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{Load cases.}
+\begin{itemize}
+  \item LC1 (asymmetric): node 1 force
+    $(1000,10000,-5000)$\,lb;
+    node 2 force $(0,10000,-5000)$\,lb; node 3 and node 6
+    each $(500,0,0)$\,lb.
+  \item LC2 (anti-symmetric): node 1 $(0,20000,-5000)$\,lb;
+    node 2 $(0,-20000,-5000)$\,lb.
+\end{itemize}
+
+\paragraph{Limits.} Area bounds $\num{0.01}\le a_i\le\SI{3.4}{in^2}$.
+Allowable displacement at every free DOF:
+$|u|\le\SI{0.35}{in}$. Stress bounds are set per group (Table~1
+of~\cite{kaveh2010}); the implementation stores them in
+\texttt{group\_stress\_allow}.
+
+\paragraph{Reference optimum.} Published Kaveh optimum
+$W^\star=\SI{545.22}{lb}$; reproduced by our NSGA-II+surrogate to
+within \num{0.1}\,\% across 30 seeds.
+
+\section{72-bar Spatial Four-Tier Tower}
+\label{app:geom:72bar}
+
+The 72-bar spatial tower has twenty nodes stacked on four levels
+of a $\SI{60}{in}\times\SI{60}{in}$ square footprint, each level
+$\SI{60}{in}$ high. Seventy-two bars are grouped into sixteen
+area groups. This is the deepest 3D benchmark in the thesis and
+therefore the hardest for a constraint-obeying optimiser.
+
+\begin{table}[h]
+  \centering
+  \small
+  \caption{72-bar: nodal coordinates (inches). Nodes 1--16 are
+    the four upper levels, nodes 17--20 the ground level.}
+  \label{tab:geom:72bar:nodes}
+  \begin{tabular}{rrrr}
+  \toprule
+  Node & $X$ & $Y$ & $Z$ \\
+  \midrule
+  1 & 60 & 60 & 60 \\ 2 & 60 & -60 & 60 \\
+  3 & -60 & -60 & 60 \\ 4 & -60 & 60 & 60 \\
+  5 & 60 & 60 & 120 \\ 6 & 60 & -60 & 120 \\
+  7 & -60 & -60 & 120 \\ 8 & -60 & 60 & 120 \\
+  9 & 60 & 60 & 180 \\ 10 & 60 & -60 & 180 \\
+  11 & -60 & -60 & 180 \\ 12 & -60 & 60 & 180 \\
+  13 & 60 & 60 & 240 \\ 14 & 60 & -60 & 240 \\
+  15 & -60 & -60 & 240 \\ 16 & -60 & 60 & 240 \\
+  17 & 60 & 60 & 0 \\ 18 & 60 & -60 & 0 \\
+  19 & -60 & -60 & 0 \\ 20 & -60 & 60 & 0 \\
+  \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[h]
+  \centering
+  \small
+  \caption{72-bar: element connectivity (first 20 of 72). The
+    remaining 52 bars follow the four-fold tier-symmetric pattern
+    of the first tier --- see \texttt{src/benchmarks/truss\_72bar.py}
+    for the complete table.}
+  \label{tab:geom:72bar:conn}
+  \begin{tabular}{rrr}
+  \toprule
+  Bar & Node $i$ & Node $j$ \\
+  \midrule
+  1 & 17 & 1 \\ 2 & 18 & 2 \\ 3 & 19 & 3 \\ 4 & 20 & 4 \\
+  5 & 1 & 2 \\ 6 & 2 & 3 \\ 7 & 3 & 4 \\ 8 & 4 & 1 \\
+  9 & 1 & 18 \\ 10 & 2 & 19 \\ 11 & 3 & 20 \\ 12 & 4 & 17 \\
+  13 & 17 & 2 \\ 14 & 18 & 3 \\ 15 & 19 & 4 \\ 16 & 20 & 1 \\
+  17 & 1 & 3 \\ 18 & 2 & 4 \\ 19 & 1 & 5 \\ 20 & 2 & 6 \\
+  \multicolumn{3}{c}{$\cdots$ 52 rows omitted, see source} \\
+  \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Supports.} Nodes 17--20 are fully pinned. The other
+16 nodes are free, giving 48 free DOFs.
+
+\paragraph{Load cases.}
+\begin{itemize}
+  \item LC1: node~13 force $(5000,5000,-5000)$\,lb
+    (asymmetric tip load at one corner).
+  \item LC2: $-\SI{5000}{lb}$ vertical at each of the four
+    top-level nodes 13--16.
+\end{itemize}
+
+\paragraph{Design variables and groups.} $n_{\mathrm{dv}}=16$.
+Each of the four tiers has four area-groups (bottom columns,
+horizontals, verticals, and diagonals), giving $4\times 4=16$.
+
+\paragraph{Limits.} Area bounds $\num{0.1}\le a_i\le\SI{4.0}{in^2}$.
+Allowable displacement at every top-level free DOF
+$(u_x, u_y$ at nodes 13--15$)$: $|u|\le\SI{0.25}{in}$.
+Stress limit as 10-bar.
+
+\paragraph{Reference optimum.}
+$W^\star=\SI{379.62}{lb}$ (Kaveh and Talatahari~\cite{kaveh2010}).
+
+\section{200-bar Planar Stepped Tower}
+\label{app:geom:200bar}
+
+The 200-bar benchmark is the largest truss in the thesis and the
+only benchmark defined in SI units. It is a 2D stepped
+seven-bay-wide tower of eleven full-width tiers plus the top
+apex; its geometry is reproduced from the original
+Kaveh--Kalateh-Ahani formulation~\cite{kaveh2011}, but
+coordinates are our own cm-rounded coordinates (indicated in the
+benchmark API with \texttt{reference\_verified=False}).
+
+\begin{table}[h]
+  \centering
+  \small
+  \caption{200-bar: nodal coordinates (metres). First 15 of 77
+    total nodes shown; remaining nodes continue the vertical
+    $\SI{3}{m}$ stride pattern.}
+  \label{tab:geom:200bar:nodes}
+  \begin{tabular}{rrr}
+  \toprule
+  Node & $X$ (m) & $Y$ (m) \\
+  \midrule
+  1 & -4.5 & 0 \\ 2 & -3.0 & 0 \\ 3 & -1.5 & 0 \\
+  4 & 0 & 0 \\ 5 & 1.5 & 0 \\ 6 & 3.0 & 0 \\ 7 & 4.5 & 0 \\
+  8 & -4.5 & 3 \\ 9 & -3.0 & 3 \\ 10 & -1.5 & 3 \\
+  11 & 0 & 3 \\ 12 & 1.5 & 3 \\ 13 & 3.0 & 3 \\ 14 & 4.5 & 3 \\
+  15 & -4.5 & 6 \\
+  \multicolumn{3}{c}{$\cdots$ 62 rows omitted, see source} \\
+  \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Supports.} Nodes 1--7 (bottom row) are fully pinned in
+both translations: 14 DOFs fixed out of $77\times 2=154$ total,
+leaving 140 free.
+
+\paragraph{Load cases.} Three gravity load cases are specified:
+\begin{itemize}
+  \item LC1: $\SI{1}{kN}$ downward at every top-level node
+    (nodes 71--77).
+  \item LC2: $\SI{10}{kN}$ downward at top-level nodes 71--73
+    and at every east-side edge node (nodes 8, 22, 36, 50, 64).
+  \item LC3: LC1 + LC2 superposed.
+\end{itemize}
+
+\paragraph{Design variables.} $n_{\mathrm{dv}}=29$. Each group
+represents one structural role (edge chord, internal vertical,
+diagonal, horizontal) at one tier of the tower; the full
+group-map is listed in \texttt{src/benchmarks/truss\_200bar.py}.
+
+\paragraph{Limits.} Area bounds $\num{6.5e-5}\le a_i\le
+\SI{2.5e-2}{m^2}$ (equivalent to
+$\SI{0.1}\le a_i\le\SI{38.75}{in^2}$ --- wide enough to admit
+the same search space as the original imperial formulation).
+Displacement limit: every top-row free DOF is capped at
+$\SI{0.1}{m}$. Material: $E=\SI{210}{GPa}$,
+$\rho=\SI{7850}{kg/m^3}$ (structural steel). Stress allowable:
+$|\sigma|\le\SI{250}{MPa}$ per Fe~410.
+
+\paragraph{Reference optimum.} No published SI-unit optimum
+matches our coordinate choices. Our own batch of 30
+PSO seeds (Ch.~\ref{chap:results} Section~\ref{sec:results:200bar})
+converges to $W^\star\approx\SI{315.89}{kg}$ for the best seed,
+with median $\SI{330.1}{kg}$. These serve as the reference for
+Phase 10 ablation studies and are reported to four significant
+figures.
+
+\section{Cross-Benchmark Summary}
+\label{app:geom:summary}
+
+The four benchmarks span two orders of magnitude in number of
+design variables and bars, and both 2D and 3D configurations,
+giving a balanced coverage of the sizing-optimisation difficulty
+landscape (\cref{tab:geom:summary}).
+
+\begin{table}[h]
+  \centering
+  \caption{Cross-benchmark numerical summary. Units kept in each
+    benchmark's native system for clarity.}
+  \label{tab:geom:summary}
+  \small
+  \begin{tabular}{lcccc}
+    \toprule
+    Quantity & 10-bar & 25-bar & 72-bar & 200-bar \\
+    \midrule
+    Dimension $d$          & 2     & 3     & 3     & 2 \\
+    Nodes $N$              & 6     & 10    & 20    & 77 \\
+    Bars $M$               & 10    & 25    & 72    & 200 \\
+    Design vars $n_\mathrm{dv}$ & 10  & 8   & 16   & 29 \\
+    Load cases             & 1     & 2     & 2     & 3 \\
+    Displacement limit     & $\SI{2.0}{in}$ & $\SI{0.35}{in}$ & $\SI{0.25}{in}$ & $\SI{0.1}{m}$ \\
+    Stress allowable       & $\SI{25}{ksi}$ & (grouped) & $\SI{25}{ksi}$ & $\SI{250}{MPa}$ \\
+    Units                  & Imperial & Imperial & Imperial & SI \\
+    Reference $W^\star$     & $\SI{5060.85}{lb}$ & $\SI{545.22}{lb}$ & $\SI{379.62}{lb}$ & $\SI{315.89}{kg}$ \\
+    Pinned DOFs            & 4     & 12    & 12    & 14 \\
+    Free DOFs              & 8     & 18    & 48    & 140 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Closing remark.} Although the problem sizes differ by
+over an order of magnitude, the same constraint API
+(\texttt{src/constraints/}) and the same FEM backend
+(\cref{app:fem}) handle all four without benchmark-specific
+logic. The only benchmark-specific information is the contents of
+\texttt{src/benchmarks/truss\_*.py} files; those files
+collectively reproduce the tables above and supply them to the
+generic evaluator via \texttt{BenchmarkBase.evaluate()}.
