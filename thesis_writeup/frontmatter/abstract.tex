@@ -22,14 +22,14 @@ MLP surrogate trained on \num{10000} Latin-hypercube samples
 achieves $R^2=\num{0.9993}$ on weight prediction and delivers
 a $\num{132}\times$ wall-clock speedup, with
 surrogate-in-loop optima matching FEM-in-loop optima to
-$\num{0.09}\,\%$. On 72-bar we report a new methodological
-finding: the literature-cited optima of Camp~\& Bichon (2004)
-and Bekdas et al.\ (2015) are infeasible by \num{22}--%
-\num{62}\,\% under rigorous constraint enforcement, and the
-true rigorously-feasible optimum sits near $\num{549}$~lb
-rather than the published $\num{380}$~lb --- a
-$\num{45}\,\%$ gap that was previously undocumented in the
-72-bar literature. An LLM warm-start (Claude Opus~4.7) reduces
+$\num{0.09}\,\%$. On the 72-bar spatial tower our hard-
+constraint ($g\le 0$) GA, PSO, and NSGA-II converge with
+cross-seed spread under $\num{1}\,\%$ to a feasible optimum
+near $\num{549}$~lb; we do not claim a literature match
+against the soft-penalty $\num{380}$~lb value commonly cited
+in the heuristic-optimisation literature, and flag an
+independent FEM cross-check of that value as future work.
+An LLM warm-start (Claude Opus~4.7) reduces
 generations-to-convergence on 10-bar by \num{36.8}~\% at
 paired-Wilcoxon $p=\num{0.0046}$ across \num{40} seeds, with
 the effect diminishing on larger benchmarks where no
@@ -45,9 +45,8 @@ Streamlit demo reproduces every headline number in under ten
 seconds on a laptop CPU, with all LLM responses cached so that
 the pipeline runs offline without an Anthropic API key. The
 thesis thus contributes a validated, reproducible, and
-Indian-design-code-compliant AI-assisted truss-design aid,
-together with a methodological correction to the published
-72-bar literature that the Indian civil-engineering community
-should be aware of.
+Indian-design-code-compliant AI-assisted truss-design aid
+together with a statistically significant LLM warm-start
+efficacy map for evolutionary truss sizing.
 
 \clearpage

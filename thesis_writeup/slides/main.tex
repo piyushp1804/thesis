@@ -104,11 +104,12 @@
     \item[\textbf{C2}] $\num{132}\times$ neural surrogate,
       $R^2=\num{0.9993}$ on weight, surrogate-in-loop optima
       within $\num{0.09}\,\%$ of FEM-in-loop.
-    \item[\textbf{C3}] Novel finding: widely-cited
-      \num{379.62}~lb 72-bar optimum is
-      \textbf{infeasible by 22--62\,\%} under rigorous hard
-      constraints. Rigorous-feasible optimum sits near
-      $\approx\!\num{549}$~lb.
+    \item[\textbf{C3}] Rigorously-feasible 72-bar baseline:
+      hard-constraint GA/PSO/NSGA-II converge to
+      $\approx\!\num{549}$~lb (cross-seed spread $<1\,\%$);
+      gap vs the soft-penalty \num{379.62}~lb literature
+      value flagged as future work pending independent FEM
+      cross-check.
     \item[\textbf{C4}] LLM warm-start cuts 10-bar generations
       by \textbf{\num{36.8}\,\%} ($p=\num{0.0046}$, 40 seeds);
       effect-map diminishes on larger 3D benchmarks.
@@ -145,8 +146,9 @@
       200-bar planar tower & sizing (grouped) & 29 & \num{25445}~lb\\
       \bottomrule
     \end{tabular}
-    \par\vspace{0.3em}{\scriptsize $^\dagger$ shown in this thesis
-    to be infeasible under hard constraints.}
+    \par\vspace{0.3em}{\scriptsize $^\dagger$ commonly cited
+    soft-penalty value; our hard-constraint result reaches
+    $\approx\!\num{549}$~lb (see \S 72-bar).}
   \end{block}
 \end{frame}
 
@@ -302,13 +304,14 @@
     \bottomrule
   \end{tabular}
   \par\vspace{0.4em}
-  \begin{alertblock}{Finding (C3)}
-    Widely-cited 72-bar $\num{379.62}$~lb optimum is
-    infeasible by \textbf{22--62\,\%} on displacement
-    under rigorous hard-constraint enforcement. Rigorous-feasible
-    optimum is $\approx\!\num{549}$~lb.
-    Methodological correction, not optimiser shortfall.
-  \end{alertblock}
+  \begin{block}{Observation (C3)}
+    Under hard-constraint enforcement our GA/PSO/NSGA-II converge
+    to $\approx\!\num{549}$~lb on 72-bar; we cannot reproduce
+    the soft-penalty $\num{379.62}$~lb literature value as
+    feasible in our FEM. Pending independent FEM cross-check
+    (future work), framed as a constraint-handling-convention
+    observation rather than a correction.
+  \end{block}
 \end{frame}
 
 \begin{frame}{Surrogate parity and speedup (C2)}
@@ -440,8 +443,8 @@
       \item $\num{132}\times$ speedup at $R^2=\num{0.9993}$.
       \item $\num{36.8}\,\%$ LLM-warm-start generation reduction
             ($p=\num{0.0046}$) on 10-bar.
-      \item 72-bar literature optimum shown infeasible by
-            \num{22}--\num{62}\,\%.
+      \item 72-bar rigorously-feasible baseline at
+            $\approx\!\num{549}$~lb (hard-constraint).
     \end{itemize}
   \end{block}
   \begin{block}{Limitations}
@@ -463,10 +466,10 @@
           \num{30}--\num{40}-minute-per-run cost of classical
           optimisation into $<20$~s --- \textbf{interactive
           parametric studies} in a design-review meeting.
-    \item 72-bar rigorous-feasibility finding is a
-          first-order warning for Indian transmission-tower
-          practice --- commercial soft-penalty defaults may
-          carry \num{22}--\num{62}\,\% infeasibility.
+    \item Hard- vs.\ soft-constraint ablation illustrates how
+          sensitive reported truss optima can be to the
+          constraint-handling convention --- a reminder for
+          practitioners to cross-check soft-penalty results.
     \item Streamlit UI exposes the whole stack without
           Python literacy --- consumable by a junior design
           engineer at a consulting firm.

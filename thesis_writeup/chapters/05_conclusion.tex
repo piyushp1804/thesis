@@ -38,19 +38,19 @@ $\num{0.09}\,\%$
 (\cref{sec:results:surrogate},
 \cref{sec:results:ablation:surrogate}).
 
-\paragraph{C3. A novel 72-bar infeasibility finding.} A
-rigorous hard-constraint ($g \le 0$) re-run of the 72-bar
-spatial tower exposes that the widely-cited literature optima
---- Camp \&~Bichon 2004 at \num{380.24}~lb, Bekdas et al.~2015
-at \num{379.62}~lb --- are, under tight constraint enforcement,
-infeasible by \num{22}--\num{62}\,\% on displacement and
-\num{22}\,\% on stress. The true rigorously-feasible optimum
-sits near $\num{549}$~lb. This is a methodological correction
-to the published literature, not an optimiser shortfall; the
-ablation of
-\cref{sec:results:ablation:constraints} makes the point in
-both figures and numbers
-(\cref{sec:results:72bar}).
+\paragraph{C3. A rigorously-feasible 72-bar baseline.} A
+hard-constraint ($g \le 0$) run of the 72-bar spatial tower
+reports a feasible optimum near $\num{549}$~lb with GA, PSO,
+and NSGA-II in cross-seed agreement under $\num{1}\,\%$. Under
+the same encoding our FEM cannot reproduce the commonly cited
+Camp \&~Bichon 2004 (\num{380.24}~lb) or Bekdas et al.~2015
+(\num{379.62}~lb) optima as feasible; the gap is consistent
+with a constraint-handling-convention artefact rather than an
+optimiser shortfall, but pending an independent FEM
+cross-check of the encoding we frame this as a
+methodological observation rather than a correction
+(\cref{sec:results:72bar},
+\cref{sec:results:ablation:constraints}).
 
 \paragraph{C4. An LLM warm-start efficacy map.} On the smallest
 benchmark (10-bar, \num{40} seeds), an LLM warm-start reduces
@@ -93,11 +93,13 @@ relevant result section cited in parentheses.
 optima within \num{2}~\% of published values.} Achieved on
 10-bar ($\num{0.004}\,\%$ error against Sunar~\cite{sunar1991})
 and 25-bar ($\num{0.008}\,\%$ error against
-Schmit~\cite{schmit1976}). On 72-bar the $\num{2}\,\%$ target
-is unachievable against the published \num{379.62}~lb because
-that optimum is infeasible under rigorous constraint
-enforcement; the rigorous-feasibility optimum of $\num{549}$~lb
-is itself reached to within $\num{0.13}~\%$ cross-seed
+Schmit~\cite{schmit1976}). On 72-bar we could not match the
+published \num{379.62}~lb under hard-constraint enforcement;
+the rigorously-feasible optimum in our FEM sits at
+$\num{549}$~lb, reached to within $\num{0.13}~\%$ cross-seed.
+We attribute the gap tentatively to constraint-handling
+convention and list independent FEM cross-check of the 72-bar
+encoding as future work
 (\cref{sec:results:10bar,sec:results:25bar,sec:results:72bar}).
 
 \paragraph{Objective 2 --- Generate Pareto fronts with at
@@ -147,18 +149,13 @@ shift if the live load increases by \num{15}\,\%?''
 ``does adding a cross-bracing change the tower weight?'' --- this
 opens up interactive usage that was previously batch-only.
 
-Second, the 72-bar rigorous-feasibility finding matters for
-Indian transmission-tower practice specifically, where
-transmission towers are routinely sized using commercial
-software whose default constraint handling is
-soft-penalty. A tower signed off at \num{380}~lb-per-tonne
-equivalent under soft penalties may be carrying
-\num{22}--\num{62}\,\% infeasibility in displacement; the
-routine engineering decision to shift to hard-feasibility
-enforcement would push the design mass up by
-$\sim\num{45}\,\%$. This is a first-order economic fact that
-the Indian civil-engineering community should be aware of,
-independent of the specific framework developed here.
+Second, the hard- vs.\ soft-constraint ablation on 72-bar
+(\cref{sec:results:ablation:constraints}) illustrates how
+sensitive reported truss-sizing optima can be to the choice of
+constraint-handling convention; designers using
+soft-penalty commercial solvers may benefit from running an
+independent hard-feasibility cross-check before signing off on
+a final design.
 
 Third, the Streamlit UI exposes the whole stack in a form that
 does not require Python literacy: an IIT~BHU M.Tech project
@@ -261,9 +258,21 @@ Power Grid Corporation of India Limited (PGCIL) or a
 consulting firm; it is the single step that would move the
 framework from demonstration to deployment.
 
+\paragraph{F7. Independent FEM cross-check of the 72-bar
+encoding.} The hard-constraint 72-bar result of
+\cref{sec:results:72bar} differs from the commonly cited
+Camp~2004 / Bekdas~2015 values by a wide margin. Before any
+methodological claim can be made on that gap, the encoding
+should be passed through a second finite-element
+implementation (OpenSeesPy, SAP2000, or ANSYS) with the same
+Camp 2004 area vector; if the second FEM reproduces our
+displacement and stress numbers, the gap can then be reported
+as a constraint-handling-convention finding rather than the
+tentative observation it currently is.
+
 \bigskip
 \noindent
-All six directions above are open for a successor M.Tech or
+All seven directions above are open for a successor M.Tech or
 Ph.D.\ cohort and are tracked in
 \texttt{docs/ROADMAP.md} at the \texttt{phase-10-complete}
 repository tag.
