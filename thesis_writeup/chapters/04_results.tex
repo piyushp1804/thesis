@@ -401,10 +401,11 @@ are listed in \cref{tab:results:72bar-setup}.
   \caption{72-bar results — best / mean / std / percent gap vs the
     literature-cited \num{379.62}~lb. $\mathrm{pop} = 100$,
     $n_\text{gen} = 300$ for GA and NSGA-II, $n_\text{gen} = 500$
-    for PSO. The literature-cited optimum is itself infeasible in
-    our FEM (see discussion below), so the gap reflects rigorous-
+    for PSO. The literature-cited optimum could not be reproduced
+    under our hard-constraint FEM; the gap reflects rigorous-
     constraint vs.\ soft-penalty methodology rather than optimiser
-    performance.}
+    performance. We do not claim a methodological correction to
+    the published value pending independent FEM cross-check.}
   \label{tab:results:72bar}
   \sisetup{table-format=3.2}
   \begin{tabular}{lrSSSS}
@@ -420,28 +421,25 @@ are listed in \cref{tab:results:72bar-setup}.
 
 All three algorithms converge to the same neighbourhood of $\sim
 \num{550}$~lb with cross-seed spreads under $\num{1}\,\%$, well above
-the literature-cited minimum of $\num{379.62}$~lb. This gap warrants
-explanation. We adopt the canonical Camp \& Bichon~\cite{camp2004}
-problem definition exactly: identical group order, lateral-tip-only
-displacement check, and the two standard load cases. Yet plugging the
-published 380.24~lb ant-colony optimum from~\cite{camp2004} directly
-into our finite-element model yields a maximum lateral tip
-displacement of \num{0.41}~in — \num{62}\,\% above the
-$\num{0.25}$~in limit — and a maximum member stress of \num{30503}~psi
-— \num{22}\,\% above the $\num{25000}$~psi limit. The same is true of
-the Bekdaş~\cite{bekdas2015} continuous optimum at \num{379.6}~lb.
-The published literature minima are therefore \emph{infeasible} under
-rigorous constraint enforcement; they are reachable only with soft
-penalty handling that admits violations of the order of \num{20}--%
-\num{25}\,\%. With a hard ($g \le 0$) constraint, the true feasible
-optimum sits near $\num{550}$~lb. Particle-swarm optimisation reaches
-this floor with effectively zero cross-seed variance; GA and NSGA-II
-agree to within $\num{1}\,\%$. The percent-error column in
-\cref{tab:results:72bar} should therefore be read as the gap between
-the rigorous-feasibility optimum and the soft-penalty literature
-value, not as an optimiser shortfall — a methodologically important
-distinction that, to our knowledge, has not been called out in the
-prior 72-bar literature.
+the literature-cited minimum of $\num{379.62}$~lb. We adopt the
+canonical Camp \& Bichon~\cite{camp2004} problem definition --- group
+order, lateral-tip-only displacement check, and the two standard load
+cases --- and observe that under our hard-constraint
+($g \le 0$) FEM the rigorously-feasible optimum sits near
+$\num{550}$~lb across GA, PSO, and NSGA-II. Particle-swarm
+optimisation reaches this floor with effectively zero cross-seed
+variance; GA and NSGA-II agree to within $\num{1}\,\%$. The
+percent-error column in \cref{tab:results:72bar} should therefore be
+read as the gap between our hard-constraint result and the
+commonly cited soft-penalty literature value, not as an optimiser
+shortfall. The Bekdaş 2015 and Camp 2004 published optima are
+reachable only with soft-penalty constraint handling that admits
+violations of the order of \num{20}--$\num{25}\,\%$ in our FEM;
+because we have not independently cross-checked our 72-bar encoding
+against a second finite-element implementation, we frame this as a
+constraint-handling-methodology observation rather than a
+correction to the published values, and list independent FEM
+cross-check as future work (\S\ref{sec:concl:future}).
 
 \begin{figure}[htbp]
   \centering
@@ -955,21 +953,21 @@ making when weight is the target; the parity plot of
 \subsection{Hard vs Soft Constraint Handling}
 \label{sec:results:ablation:constraints}
 
-The second ablation --- and the most important numerical finding
-of the thesis --- concerns the constraint handling on 72-bar.
+The second ablation concerns the constraint handling on 72-bar.
 Two versions of the optimisation were run: one with strict hard
 feasibility ($g_i(\mathbf{x}) \le 0$ for every IS~800 clause, a
 design is feasible if and only if all $g_i \le 0$), and one with
 a soft quadratic penalty where $g_i>0$ is accepted but penalised
 at $\lambda = \num{e4}\,g_i^2$. The soft-penalty formulation is
-what Camp \&~Bichon~\cite{camp2004} and Bekdas et
+similar to what Camp \&~Bichon~\cite{camp2004} and Bekdas et
 al.~\cite{bekdas2015} report, and under it our GA reaches
 $\num{379}$--$\num{382}$~lb (matching their published values to
-within \num{0.5}\,\%). Under strict $g \le 0$, the GA reaches
-$\num{549.78}$~lb, because any design under $\num{400}$~lb
-violates the lateral-displacement constraint at the tip nodes by
-$\num{22}$--$\num{62}\,\%$. \Cref{fig:results:hard-vs-soft}
-overlays the two convergence trajectories.
+within \num{0.5}\,\% \emph{in our FEM}). Under strict $g \le 0$,
+the GA reaches $\num{549.78}$~lb in our FEM, because any design
+under $\num{400}$~lb is flagged as violating the lateral-
+displacement constraint at the tip nodes.
+\Cref{fig:results:hard-vs-soft} overlays the two convergence
+trajectories.
 
 \begin{figure}[htbp]
   \centering
@@ -983,12 +981,14 @@ overlays the two convergence trajectories.
   \label{fig:results:hard-vs-soft}
 \end{figure}
 
-The $\num{170}$-lb gap between \num{380}~lb and \num{550}~lb is
-therefore an artefact of the constraint-handling convention, not
-an optimiser shortfall. The thesis's contribution here is to
-make that gap visible and to recommend that future 72-bar
-literature separate the two quantities rather than reporting
-them under a single ``optimum weight'' heading.
+The $\num{170}$-lb gap between \num{380}~lb and \num{550}~lb in
+our FEM is therefore consistent with a constraint-handling
+artefact rather than an optimiser shortfall. Because we have
+not cross-checked the encoding against a second finite-element
+implementation, we do not claim this gap as a correction to the
+published values; we merely report the convention-dependence
+observed in our framework and list independent verification as
+future work (\S\ref{sec:concl:future}).
 
 \subsection{IS~800:2007 Inclusion vs Exclusion}
 \label{sec:results:ablation:is800}

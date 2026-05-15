@@ -185,14 +185,13 @@ lb respectively against the \num{545.22} lb literature value.
 
 \paragraph{72-bar spatial tower (Fleury \& Schmit 1980).}
 Three-dimensional, twenty nodes, seventy-two bars, two load cases,
-sixteen symmetry groups per Camp and Bichon~\cite{camp2004}.
-Chapter~\ref{chap:results} documents a residual optimality gap on
-this benchmark; the investigation in \S\ref{sec:results:72bar}
-concludes that the published \num{379.62} lb figure is infeasible
-under strict FEM+IS~800 re-analysis at approximately
-$\num{25}$~\% constraint violation, consistent with the long-
-standing observation in the heuristic-optimisation literature that
-many 72-bar ``optima'' rely on softened constraint tolerances.
+sixteen symmetry groups per Camp and Bichon~\cite{camp2004}. Under
+hard-constraint enforcement ($g \le 0$) the framework reports a
+rigorously-feasible optimum near $\num{549}$~lb with cross-seed
+spread under $\num{1}\,\%$; we do not claim a literature match
+against the commonly cited \num{379.62}~lb soft-penalty value and
+flag an independent FEM cross-check of the encoding as future
+work (see \S\ref{sec:results:72bar}).
 
 \paragraph{200-bar planar (Kaveh \& Talatahari 2010).} Two-
 dimensional, seventy-seven nodes, two hundred bars, twenty-nine

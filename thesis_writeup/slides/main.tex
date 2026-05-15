@@ -159,7 +159,7 @@
       \textcolor{inkmuted}{Part 2} \quad\textbf{Framework}\\
       FEM $\to$ IS~800 $\to$ GA/PSO/NSGA-II $\to$ surrogate $\to$ RL $\to$ LLM.\\[0.6em]
       \textcolor{inkmuted}{Part 3} \quad\textbf{Results}\\
-      Four benchmarks, five headline findings, the 72-bar correction.
+      Four benchmarks, five headline findings, the 72-bar observation.
     \column{0.48\linewidth}
       \small
       \textcolor{inkmuted}{Part 4} \quad\textbf{Analysis}\\
@@ -225,7 +225,7 @@
   \begin{columns}[t,onlytextwidth]
     \column{0.19\linewidth} \bignum{0.004\%}{\textbf{C1} \ \ 10-bar error vs. Sunar \& Belegundu 1991 \textendash\ end-to-end stack validation}
     \column{0.19\linewidth} \bignum{132$\times$}{\textbf{C2} \ \ wall-clock speedup via MLP surrogate at $R^2=0.9993$ on weight}
-    \column{0.19\linewidth} \bignum{45\%}{\textbf{C3} \ \ mass gap from 72-bar literature optimum \textendash\ correction to published results}
+    \column{0.19\linewidth} \bignum{549\,lb}{\textbf{C3} \ \ rigorously-feasible 72-bar baseline; gap vs.\ soft-penalty literature value \textendash\ observation pending FEM cross-check}
     \column{0.19\linewidth} \bignum{-36.8\%}{\textbf{C4} \ \ fewer generations to converge with LLM warm-start, $p=0.0046$}
     \column{0.19\linewidth} \bignum{<10\,s}{\textbf{C5} \ \ full IS~800 pipeline, laptop CPU, no API key required}
   \end{columns}
@@ -358,7 +358,7 @@
 % PART 3: RESULTS
 % ============================================================
 \sectioncover{3}{The results}{%
-  Four benchmarks, five headline findings, one correction to the literature.
+  Four benchmarks, five headline findings, one observation on the 72-bar literature.
 }
 
 \begin{frame}{10-bar planar \ \textendash\ end-to-end stack validation}{C1 \ \textbullet\ \ PSO to literature within 0.004\,\%}
@@ -407,27 +407,21 @@
     \bottomrule
   \end{tabular}
   \\[0.4em]
-  {\scriptsize\color{inkmuted}$^\dagger$ Literature-cited 72-bar optimum is shown next slide to be infeasible under hard constraints.}
+  {\scriptsize\color{inkmuted}$^\dagger$ Soft-penalty literature value; could not be reproduced as feasible in our hard-constraint FEM (see next slide).}
 \end{frame}
 
-\begin{frame}{The 72-bar infeasibility finding}{C3 \ \textbullet\ \ correction to the published literature}
+\begin{frame}{The 72-bar hard-constraint baseline}{C3 \ \textbullet\ \ observation pending independent FEM cross-check}
   \begin{columns}[T,onlytextwidth]
     \column{0.55\linewidth}
       \centering
       \includegraphics[width=\linewidth]{fig_4_5_2_hard_vs_soft.png}
     \column{0.42\linewidth}
       \small
-      The 72-bar optima cited by Camp \& Bichon (2004) and Bekd\c{a}{\c s} et al.\ (2015) at $\sim 380$~lb fail rigorous constraint enforcement by:
-      \vspace{0.5em}
-      \begin{itemize}\footnotesize
-        \item \textbf{22--62\,\%} on displacement
-        \item \textbf{22\,\%} on stress
-      \end{itemize}
-      The rigorously-feasible optimum sits near \textbf{549~lb} --- a \textbf{45\,\%} mass gap.
+      Under our hard-constraint FEM the 72-bar optimum converges to $\sim$\textbf{549~lb} (cross-seed spread ${<}1\,\%$); we could not reproduce the soft-penalty $\sim 380$~lb literature values of Camp \& Bichon (2004) / Bekd\c{a}{\c s} et al.\ (2015) as feasible.
       \vspace{0.5em}
 
-      \pillred{methodological correction}\\[0.3em]
-      \footnotesize\color{inkmuted}Implication: commercial soft-penalty defaults in Indian transmission-tower practice may be signing off on non-compliant designs.
+      \pillblue{observation --- future work F7}\\[0.3em]
+      \footnotesize\color{inkmuted}The gap may reflect differing constraint-handling conventions rather than an error in the published studies. An independent FEM cross-check (OpenSeesPy / SAP2000) is listed as future work~F7.
   \end{columns}
 \end{frame}
 
@@ -525,7 +519,7 @@
   \centering
   \includegraphics[height=0.66\textheight]{fig_4_5_3_is800_pareto.png}
   \\[0.3em]
-  {\footnotesize\color{inkmuted}With hard IS~800 constraints, minimum feasible mass rises by $\sim 45\,\%$ on 72-bar. The economic consequence for Indian transmission-tower practice is first-order.}
+  {\footnotesize\color{inkmuted}With hard IS~800 constraints, our 72-bar feasible mass sits at $\sim 549$~lb vs.\ the soft-penalty $\sim 380$~lb literature value. The hard- vs.\ soft-constraint ablation illustrates how sensitive reported truss-sizing optima can be to the constraint-handling convention; independent cross-check is future work~F7.}
 \end{frame}
 
 % ============================================================
@@ -540,9 +534,9 @@
       \footnotesize
       $30$--$40$-min GA run $\to$ $<\!20$~s hybrid surrogate/FEM. Enables parametric studies during a review meeting instead of batch jobs overnight.
     \column{0.33\linewidth}
-      \textbf{72-bar warning}
+      \textbf{Constraint-handling sensitivity}
       \footnotesize
-      Soft-penalty defaults in commercial tools may carry \textbf{22--62\,\%} displacement infeasibility. Hard-feasibility enforcement would push tower mass $\sim\!45\,\%$ heavier.
+      The hard- vs.\ soft-constraint ablation shows how sensitive reported truss-sizing optima can be to the penalty convention. Designers using soft-penalty commercial solvers may benefit from an independent hard-feasibility cross-check before sign-off.
     \column{0.33\linewidth}
       \textbf{Zero-Python design aid}
       \footnotesize
@@ -600,17 +594,18 @@
   \color{inkmuted}\footnotesize None of these are load-bearing for C1--C5; but they do set the boundary of claims I will defend.
 \end{frame}
 
-\begin{frame}{Future work}{F1--F6 --- open for the successor cohort}
+\begin{frame}{Future work}{F1--F7 --- open for the successor cohort}
   \small
   \begin{columns}[T,onlytextwidth]
     \column{0.49\linewidth}
       \textbf{F1} Non-linear \& dynamic FEM $\to$ IS~1893 seismic.\\[0.4em]
       \textbf{F2} Topology optimisation via ground-structure \& SIMP.\\[0.4em]
-      \textbf{F3} GNN surrogate for variable-topology design.
+      \textbf{F3} GNN surrogate for variable-topology design.\\[0.4em]
+      \textbf{F4} Cross-instance PPO transfer with shared GNN encoder.
     \column{0.49\linewidth}
-      \textbf{F4} Cross-instance PPO transfer with shared GNN encoder.\\[0.4em]
       \textbf{F5} Fine-tuned domain-specific LLM on IS~800 + IS~875 corpus.\\[0.4em]
-      \textbf{F6} \pillred{PGCIL transmission-tower validation} --- framework $\to$ deployment.
+      \textbf{F6} \pillred{PGCIL transmission-tower validation} --- framework $\to$ deployment.\\[0.4em]
+      \textbf{F7} Independent FEM cross-check of the 72-bar encoding (OpenSeesPy / SAP2000 / ANSYS) using the published Camp 2004 area vector.
   \end{columns}
 \end{frame}
 
@@ -619,7 +614,7 @@
   \begin{itemize}
     \item \textbf{C1} 10-bar to literature at $\num{0.004}\,\%$ --- full stack validated end-to-end.
     \item \textbf{C2} $132\times$ surrogate speedup at $R^2 = 0.9993$ --- makes interactive use practical.
-    \item \textbf{C3} 72-bar literature optimum infeasible by $22$--$62\,\%$ --- methodological correction.
+    \item \textbf{C3} Rigorously-feasible 72-bar baseline (${\sim}549$~lb, cross-seed spread ${<}1\,\%$); gap vs.\ soft-penalty 379.62~lb literature value flagged as future work pending independent FEM cross-check (F7).
     \item \textbf{C4} LLM warm-start: $-36.8\,\%$ gens on 10-bar ($p=0.0046$); diminishes on 3D.
     \item \textbf{C5} IS~800-compliant design aid in a Streamlit UI, $<10$~s end-to-end, zero API key to rebuild.
   \end{itemize}
