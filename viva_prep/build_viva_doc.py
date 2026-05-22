@@ -299,7 +299,7 @@ toc_items = [
     ("4.  What is IS 800:2007 — the Indian steel code", "p. 12"),
     ("5.  Optimization, the simplest possible explanation", "p. 15"),
     ("6.  The five search methods (GA, PSO, NSGA-II, Surrogate, PPO)", "p. 18"),
-    ("7.  The LLM warm-start — the novel contribution", "p. 30"),
+    ("7.  The agent warm-start — the novel contribution", "p. 30"),
     ("8.  Slide-by-slide walkthrough — Part 1: The Problem", "p. 34"),
     ("9.  Slide-by-slide walkthrough — Part 2: The Framework", "p. 40"),
     ("10. Slide-by-slide walkthrough — Part 3: The Results", "p. 48"),
@@ -339,7 +339,7 @@ para(
     "a steel truss design problem, applies several AI techniques to find the "
     "lightest design that still satisfies the Indian steel code (IS 800:2007), "
     "and proves on four standard benchmarks that the AI techniques work as "
-    "claimed — including a novel idea where a Large Language Model (Claude) "
+    "claimed — including a novel idea where a AI Design Agent (Claude) "
     "warm-starts the optimization to converge faster.",
 )
 
@@ -347,7 +347,7 @@ H2(doc, "1.1  Why does this matter?")
 bullet(doc, "India builds thousands of trusses every year — industrial sheds, transmission towers, highway overpasses. Most are designed by trial-and-check methods that over-use steel by 10–30%.")
 bullet(doc, "Steel is responsible for ~1.9 kg of CO₂ per kg produced, and construction is ~11% of global emissions. Even small percentage savings, scaled across the country, become massive in absolute terms.")
 bullet(doc, "Optimization research already exists, but most published methods are too slow (40+ minutes per run) or use ‘soft penalty’ tricks that wouldn't survive a real code check.")
-bullet(doc, "This thesis gives a fast (under 10 seconds with the surrogate), hard-constraint, IS 800-compliant, reproducible framework — and it tests whether an LLM can help it converge faster.")
+bullet(doc, "This thesis gives a fast (under 10 seconds with the surrogate), hard-constraint, IS 800-compliant, reproducible framework — and it tests whether an AI agent can help it converge faster.")
 
 H2(doc, "1.2  The five contributions in one place")
 
@@ -372,7 +372,7 @@ contributions = [
     ("C1", "End-to-end stack validation on 10-bar truss vs. literature", "Error = 0.004% (PSO best = 5061.05 lb vs. 5060.85 lb)"),
     ("C2", "Neural surrogate wall-clock speedup, weight head accuracy", "132× faster than FEM, R² = 0.9993"),
     ("C3", "Rigorously-feasible 72-bar baseline under hard IS 800 constraints", "~549 lb (vs. soft-penalty literature ~380 lb — flagged as observation)"),
-    ("C4", "LLM warm-start reduces generations to convergence (10-bar)", "−36.8% generations, p-value = 0.0046"),
+    ("C4", "agent warm-start reduces generations to convergence (10-bar)", "−36.8% generations, p-value = 0.0046"),
     ("C5", "Complete IS 800 pipeline on laptop CPU, no API key required", "<10 s end-to-end with surrogate"),
 ]
 for i, (lab, contrib, num) in enumerate(contributions, start=1):
@@ -395,14 +395,14 @@ bullet(doc, "IS 800:2007 compliance — the code checks (tension, compression bu
 bullet(doc, "GA / PSO / NSGA-II — three evolutionary optimizers from pymoo.", bold_prefix="Layer 4.")
 bullet(doc, "Neural surrogate — MLP that replaces FEM in the inner loop for 132× speedup.", bold_prefix="Layer 5.")
 bullet(doc, "PPO reinforcement learning agent — learns a sizing policy by trial and error.", bold_prefix="Layer 6.")
-bullet(doc, "LLM warm-start designer — Claude proposes initial designs to seed the GA.", bold_prefix="Layer 7.")
+bullet(doc, "agent warm-start designer — Claude proposes initial designs to seed the GA.", bold_prefix="Layer 7.")
 bullet(doc, "Streamlit UI + FastAPI — interactive interface for non-Python users.", bold_prefix="Layer 8.")
 
 callout(
     doc,
     "REMEMBER",
     "If the examiner asks ‘what is the one-line thesis statement’ — say: "
-    "‘An LLM-warm-started, surrogate-accelerated, IS 800-compliant evolutionary "
+    "‘An agent-warm-started, surrogate-accelerated, IS 800-compliant evolutionary "
     "framework for steel truss sizing, validated on four classical benchmarks.’",
 )
 
@@ -965,9 +965,9 @@ code_block(doc,
 page_break(doc)
 
 # ============================================================
-# SECTION 7: LLM WARM-START
+# SECTION 7: AGENT WARM-START
 # ============================================================
-H1(doc, "7. The LLM Warm-Start — The Novel Contribution")
+H1(doc, "7. The Agent Warm-Start — The Novel Contribution")
 
 para(doc,
      "This is the most original part of the thesis. Examiners will want "
@@ -1020,7 +1020,7 @@ code_block(doc,
 
 H2(doc, "7.5  Caching for reproducibility")
 para(doc,
-     "Every LLM response is hashed (by prompt) and cached under "
+     "Every agent response is hashed (by prompt) and cached under "
      "results/llm_cache/*.json. The next time the same prompt is sent, "
      "the cached response is used. This means: (a) reproducible results, "
      "(b) zero API key required for anyone replaying the thesis, "
@@ -1029,7 +1029,7 @@ para(doc,
 H2(doc, "7.6  The A/B experiment")
 H3(doc, "Two arms")
 bullet(doc, "100 random initial designs.", bold_prefix="Arm A (baseline GA):")
-bullet(doc, "92 random + 8 from Claude.", bold_prefix="Arm B (LLM warm-start):")
+bullet(doc, "92 random + 8 from Claude.", bold_prefix="Arm B (agent warm-start):")
 
 H3(doc, "Metric")
 para(doc,
@@ -1071,8 +1071,8 @@ doc.add_paragraph()
 
 H2(doc, "7.7  The honest interpretation")
 para(doc,
-     "LLM warm-start helps MOST when there is an architectural insight "
-     "the LLM can express — e.g., on 10-bar, Claude correctly identifies "
+     "agent warm-start helps MOST when there is an architectural insight "
+     "the agent can express — e.g., on 10-bar, Claude correctly identifies "
      "that bars {2, 5, 6, 10} are nearly redundant (essentially "
      "set them to A_min). This is a known result in the literature, but "
      "the GA would have to rediscover it through hundreds of generations.")
@@ -1083,23 +1083,23 @@ para(doc,
 para(doc,
      "This is the right kind of result for a thesis: it shows when the "
      "method works and when it doesn't, and explains why. A naive claim "
-     "of ‘LLM always helps’ would be false and would invite hostile "
-     "questions. The qualified claim — ‘LLM helps when an architectural "
+     "of ‘agent always helps’ would be false and would invite hostile "
+     "questions. The qualified claim — ‘agent helps when an architectural "
      "insight exists’ — is defensible and intellectually honest.",
      italic=True, color=MUTED)
 
 H2(doc, "7.8  What is genuinely new here?")
-bullet(doc, "First application of LLM warm-start to truss sizing (to our knowledge).")
+bullet(doc, "First application of agent warm-start to truss sizing (to our knowledge).")
 bullet(doc, "First rigorous A/B test with multiple seeds and a non-parametric significance test.")
 bullet(doc, "Effect-map across four benchmark sizes — quantifies where it helps and where it doesn't.")
 bullet(doc, "Fully cached & reproducible — anyone can re-run without paying for API calls.")
 
 callout(doc, "STORY FOR VIVA",
-        "‘The LLM is not the optimizer — it is a smart initializer. It "
+        "‘The agent is not the optimizer — it is a smart initializer. It "
         "exploits years of training on engineering text to give the GA a "
-        "warm head-start. Where the LLM can surface a structural insight, "
+        "warm head-start. Where the agent can surface a structural insight, "
         "it cuts the generations to convergence by a third or more. "
-        "Where the LLM lacks insight, the effect vanishes. We measure "
+        "Where the agent lacks insight, the effect vanishes. We measure "
         "both regimes and explain the mechanism.’")
 
 page_break(doc)
@@ -1117,7 +1117,7 @@ para(doc,
      "‘Good morning, I am Aryan, IDD Civil Year 5, roll 21064030. My "
      "thesis is on an AI-powered framework for multi-objective steel "
      "truss optimization, integrating evolutionary algorithms, neural "
-     "surrogates, reinforcement learning, and LLM-assisted design, all "
+     "surrogates, reinforcement learning, and agent-assisted design, all "
      "under IS 800:2007. My supervisor is Dr. Krishna Kant Pathak.’")
 para(doc, "Time: 20 s.", italic=True, color=MUTED)
 
@@ -1150,7 +1150,7 @@ para(doc, "Time: 90 s. The figure on the right shows the design-gap visually.",
 
 H2(doc, "Slide 5 — The research question")
 para(doc,
-     "‘So the precise research question is: can a large language model "
+     "‘So the precise research question is: can an AI design agent "
      "warm-start classical metaheuristics, so that they converge faster "
      "on truss sizing problems, while staying IS 800-compliant? I test "
      "this against four classical benchmarks — 10-bar, 25-bar, 72-bar, "
@@ -1163,7 +1163,7 @@ bullet(doc, "Reproduce classical optima within ±2%. → Achieved <0.01%.", bold
 bullet(doc, "NSGA-II Pareto fronts with ≥20 points. → Achieved 24–32.", bold_prefix="O2.")
 bullet(doc, "≥50× surrogate speedup at R²>0.98. → Achieved 132×.", bold_prefix="O3.")
 bullet(doc, "PPO within 5% of best classical solver. → Mixed, +16%.", bold_prefix="O4.")
-bullet(doc, "LLM warm-start cuts gens-to-convergence ≥20%. → −36.8% on 10-bar.", bold_prefix="O5.")
+bullet(doc, "agent warm-start cuts gens-to-convergence ≥20%. → −36.8% on 10-bar.", bold_prefix="O5.")
 para(doc,
      "‘Four of the five objectives are fully met. The fifth — PPO parity "
      "— is mixed and I will explain why.’",
@@ -1176,7 +1176,7 @@ para(doc,
      "on 10-bar to 0.004 percent of literature. C2: 132× surrogate "
      "speedup at R² = 0.9993 on weight. C3: a rigorously feasible 72-bar "
      "baseline of 549 lb — an observation, because it differs from "
-     "soft-penalty literature. C4: LLM warm-start saves 36.8% generations "
+     "soft-penalty literature. C4: agent warm-start saves 36.8% generations "
      "on 10-bar, p-value 0.0046. C5: a complete IS 800 pipeline running "
      "end-to-end in under 10 seconds on a laptop CPU, no API key "
      "required.’")
@@ -1196,7 +1196,7 @@ H2(doc, "Slide 8 — Part 2 section cover")
 para(doc,
      "‘The framework is an 8-layer stack. From the bottom up: benchmarks, "
      "FEM, IS 800 checks, three evolutionary algorithms, a neural surrogate, "
-     "a PPO agent, the LLM warm-start, and a Streamlit UI.’")
+     "a PPO agent, the agent warm-start, and a Streamlit UI.’")
 para(doc, "Time: 20 s.", italic=True, color=MUTED)
 
 H2(doc, "Slide 9 — Problem formulation")
@@ -1223,7 +1223,7 @@ para(doc,
      "is the ground truth. The neural surrogate sits beside it as a "
      "fast approximation. The optimizers — GA, PSO, NSGA-II — call "
      "either FEM or the surrogate. The PPO agent has its own training "
-     "loop. The LLM warm-start sits at the top, seeding the initial "
+     "loop. The agent warm-start sits at the top, seeding the initial "
      "population. Everything is exposed through the Streamlit UI.’")
 para(doc, "Time: 60 s. Don't read every box — point to the flow.",
      italic=True, color=MUTED)
@@ -1267,13 +1267,13 @@ para(doc,
      italic=True, color=MUTED)
 para(doc, "Time: 80 s.", italic=True, color=MUTED)
 
-H2(doc, "Slide 14 — RL agent and LLM warm-start")
+H2(doc, "Slide 14 — RL agent and agent warm-start")
 para(doc, "PPO side:")
 bullet(doc, "State: current area vector plus σ_max, δ_max.")
 bullet(doc, "Action: multiplicative adjustment per area ∈ [0.5, 2.0].")
 bullet(doc, "Reward: −W minus λ·infeasibility penalty.")
 bullet(doc, "Stable-Baselines3 PPO, MLP policy, 150k timesteps.")
-para(doc, "LLM side:")
+para(doc, "agent side:")
 bullet(doc, "Structured prompt with geometry, loads, material, IS 800 constraints.")
 bullet(doc, "Claude returns k=8 candidate designs + reasoning.")
 bullet(doc, "Injected as first-population seeds.")
@@ -1347,13 +1347,13 @@ para(doc,
      "FEM fallback on the constraint boundary.’")
 para(doc, "Time: 80 s.", italic=True, color=MUTED)
 
-H2(doc, "Slide 20 — LLM warm-start effect-map (C4)")
+H2(doc, "Slide 20 — agent warm-start effect-map (C4)")
 para(doc,
      "‘Bar chart of percentage change in generations-to-convergence. "
      "10-bar: −36.8%, p = 0.0046 — significant. 25-bar: −76.6%, p = 0.25 — "
      "the magnitude looks great but n=3 seeds means it's underpowered. "
      "72-bar: +4.8%, p = 0.81 — no detectable effect. The interpretation: "
-     "LLM helps when an architectural insight exists. On 10-bar, Claude "
+     "agent helps when an architectural insight exists. On 10-bar, Claude "
      "correctly identifies bars 2, 5, 6, 10 as redundant. On 72-bar there "
      "is no analogous insight, and the effect vanishes.’")
 para(doc, "Time: 90 s.", italic=True, color=MUTED)
@@ -1379,7 +1379,7 @@ para(doc, "Slides 22–25. Aim for ~3 minutes.")
 H2(doc, "Slide 22 — Section cover")
 para(doc,
      "‘Three deeper questions: how trustworthy is the surrogate, how fast "
-     "does each optimizer converge, and what does the LLM actually say?’")
+     "does each optimizer converge, and what does the agent actually say?’")
 para(doc, "Time: 15 s.", italic=True, color=MUTED)
 
 H2(doc, "Slide 23 — MC-dropout calibration")
@@ -1397,8 +1397,8 @@ para(doc,
      "‘We fit an exponential W(t) = W_∞ + A·exp(−t/τ) to each seed's "
      "convergence curve. The time-constant τ tells you how fast the "
      "algorithm converges. PSO: 8.7 generations. GA: 23.5 generations. "
-     "GA with LLM warm-start: 14.9 generations — shifted toward PSO's. "
-     "This is the mechanism behind C4 — LLM warm-start makes GA "
+     "GA with agent warm-start: 14.9 generations — shifted toward PSO's. "
+     "This is the mechanism behind C4 — agent warm-start makes GA "
      "behave more like PSO in terms of speed.’")
 para(doc, "Time: 70 s.", italic=True, color=MUTED)
 
@@ -1439,7 +1439,7 @@ H2(doc, "Slide 28 — Reproducibility contract")
 bullet(doc, "Pinned versions: Python 3.14.1, NumPy 1.26.4, SciPy 1.13.1, pymoo 0.6.1, PyTorch 2.3.1, FastAPI 0.111, Tectonic 0.16.9.")
 bullet(doc, "Seed set: {42, 123, 456, 789, 2026, 7, 13, 91, 314, 271}, logged per run.")
 bullet(doc, "89 references, 27 figures, 14 CSVs, 21 pickle histories all checked in.")
-bullet(doc, "All LLM responses cached → offline rebuild possible.")
+bullet(doc, "All agent responses cached → offline rebuild possible.")
 bullet(doc, "CI: pytest -m ‘not slow’ green on every push; full 81-test suite green pre-tag.")
 bullet(doc, "PDF rebuild: tectonic thesis_writeup/main.tex.")
 para(doc,
@@ -1451,7 +1451,7 @@ para(doc, "Time: 60 s.", italic=True, color=MUTED)
 
 H2(doc, "Slide 29 — Live demo surface")
 para(doc, "Three interfaces, same framework:")
-bullet(doc, "localhost:8501. Sidebar for benchmark/algorithm/seed/pop/gens/LLM toggle. Live convergence plot, IS 800 report, cross-section bar chart.", bold_prefix="Streamlit UI:")
+bullet(doc, "localhost:8501. Sidebar for benchmark/algorithm/seed/pop/gens/agent toggle. Live convergence plot, IS 800 report, cross-section bar chart.", bold_prefix="Streamlit UI:")
 bullet(doc, "localhost:8000. Endpoints: /status, /benchmarks, /optimize, /llm/suggest, /thesis.pdf, /slides.pdf. Swagger docs at /docs.", bold_prefix="FastAPI:")
 bullet(doc, "125-page PDF, 27 figures, four appendices. This 35-slide deck.", bold_prefix="Thesis + deck:")
 para(doc, "If your viva allows: open the Streamlit UI and run a 10-bar GA live.",
@@ -1478,7 +1478,7 @@ bullet(doc, "Sizing only — no topology optimization. Connectivity is fixed by 
 bullet(doc, "NSGA-II 25-bar and 72-bar use 3 seeds — O2 has weaker statistical power than O1.")
 bullet(doc, "PPO trained on one instance — no cross-instance transfer.")
 bullet(doc, "IS 800 compliance uses a single buckling curve (curve a).")
-bullet(doc, "LLM is not fine-tuned — zero-shot Claude at temperature 0.3.")
+bullet(doc, "agent is not fine-tuned — zero-shot Claude at temperature 0.3.")
 para(doc,
      "‘None of these are load-bearing for C1 through C5, but they set "
      "the boundary of claims I will defend.’",
@@ -1491,7 +1491,7 @@ bullet(doc, "Non-linear & dynamic FEM → IS 1893 seismic analysis.", bold_prefi
 bullet(doc, "Topology optimization via ground-structure & SIMP.", bold_prefix="F2.")
 bullet(doc, "GNN surrogate for variable-topology design.", bold_prefix="F3.")
 bullet(doc, "Cross-instance PPO transfer with a shared GNN encoder.", bold_prefix="F4.")
-bullet(doc, "Fine-tuned domain-specific LLM on IS 800 + IS 875 corpus.", bold_prefix="F5.")
+bullet(doc, "Fine-tuned domain-specific agent on IS 800 + IS 875 corpus.", bold_prefix="F5.")
 bullet(doc, "PGCIL transmission-tower validation — from framework to deployment.", bold_prefix="F6.")
 bullet(doc, "Independent FEM cross-check of the 72-bar encoding using OpenSeesPy / SAP2000.", bold_prefix="F7.")
 para(doc, "Time: 70 s.", italic=True, color=MUTED)
@@ -1501,7 +1501,7 @@ para(doc, "Hit all five contributions one more time:")
 bullet(doc, "10-bar to literature at 0.004% — stack validated end-to-end.", bold_prefix="C1.")
 bullet(doc, "132× surrogate speedup at R² = 0.9993 — interactive use is practical.", bold_prefix="C2.")
 bullet(doc, "Rigorously feasible 72-bar baseline at ~549 lb; gap vs. soft-penalty literature flagged for future cross-check.", bold_prefix="C3.")
-bullet(doc, "LLM warm-start: −36.8% generations on 10-bar at p=0.0046; effect diminishes on harder 3D problems.", bold_prefix="C4.")
+bullet(doc, "agent warm-start: −36.8% generations on 10-bar at p=0.0046; effect diminishes on harder 3D problems.", bold_prefix="C4.")
 bullet(doc, "IS 800-compliant design aid in Streamlit UI, under 10 seconds end-to-end, zero API key to rebuild.", bold_prefix="C5.")
 para(doc,
      "‘The thesis is 125 pages, 27 figures, 89 references. The deck is "
@@ -1560,8 +1560,8 @@ qna(doc,
 
 qna(doc,
     "What is the SINGLE most important contribution?",
-    "The LLM warm-start (C4) is the most novel — to our knowledge, the "
-    "first rigorous A/B test of LLM-seeded GA on a truss benchmark. C2 "
+    "The agent warm-start (C4) is the most novel — to our knowledge, the "
+    "first rigorous A/B test of agent-seeded GA on a truss benchmark. C2 "
     "(132× surrogate speedup) is the most PRACTICALLY important because "
     "it makes the framework usable in a real design meeting.")
 
@@ -1796,13 +1796,13 @@ qna(doc,
     "That's the right tool for production deployment with many similar "
     "instances; future work F4 extends this with cross-instance transfer.")
 
-H2(doc, "14.7  LLM warm-start questions")
+H2(doc, "14.7  agent warm-start questions")
 
 qna(doc,
-    "Is the LLM doing the optimization?",
-    "No. The LLM proposes 8 starting designs. The GA does all the "
-    "optimization. The LLM is a smart initializer, not an optimizer. "
-    "Calling it ‘LLM warm-start’ is precise.")
+    "Is the agent doing the optimization?",
+    "No. The agent proposes 8 starting designs. The GA does all the "
+    "optimization. The agent is a smart initializer, not an optimizer. "
+    "Calling it ‘agent warm-start’ is precise.")
 
 qna(doc,
     "Why does Claude give better starting points than random?",
@@ -1814,32 +1814,32 @@ qna(doc,
     "engineering-reasonable starting points instead of random noise.")
 
 qna(doc,
-    "Is the LLM-warm-start result statistically significant?",
+    "Is the agent-warm-start result statistically significant?",
     "On 10-bar yes — Mann-Whitney U gives p = 0.0046 over five seeds "
     "per arm. On 25-bar the magnitude is even larger (−76.6%) but only "
     "three seeds per arm — p = 0.25, formally inconclusive. On 72-bar "
-    "no detectable effect (p = 0.81). The honest framing is that LLM "
+    "no detectable effect (p = 0.81). The honest framing is that agent "
     "warm-start works when there is an architectural insight to surface; "
     "it does nothing when there is not.")
 
 qna(doc,
-    "Could the GA discover the same insight without the LLM?",
-    "Yes, eventually. The LLM doesn't discover anything the GA couldn't "
-    "rediscover by trial and error. The LLM just provides the insight "
+    "Could the GA discover the same insight without the agent?",
+    "Yes, eventually. The agent doesn't discover anything the GA couldn't "
+    "rediscover by trial and error. The agent just provides the insight "
     "EARLIER, cutting the time the GA spends rediscovering known "
     "structural facts. That's the speedup we measure.")
 
 qna(doc,
-    "What if the LLM hallucinates a bad design?",
-    "The GA can only IMPROVE the initial population. A bad LLM design "
-    "is simply dominated by random ones and eliminated. The LLM cannot "
+    "What if the agent hallucinates a bad design?",
+    "The GA can only IMPROVE the initial population. A bad agent design "
+    "is simply dominated by random ones and eliminated. The agent cannot "
     "make the GA worse — at worst it has the same generations-to-"
     "convergence as random initialization. We observe this on 72-bar: "
     "Claude's insights are weak, the warm-start does nothing, but does "
     "no harm either (+4.8% is within noise).")
 
 qna(doc,
-    "Why not fine-tune the LLM on IS 800?",
+    "Why not fine-tune the agent on IS 800?",
     "Fine-tuning would require a labelled corpus of IS 800 examples and "
     "is expensive. We use zero-shot Claude at temperature 0.3 to test "
     "the WEAKEST POSSIBLE version of the idea. If even un-fine-tuned "
@@ -1847,14 +1847,14 @@ qna(doc,
     "Fine-tuning is listed as future work F5.")
 
 qna(doc,
-    "Could the same prompt be sent to GPT-4 / Gemini / a smaller LLM?",
+    "Could the same prompt be sent to GPT-4 / Gemini / a smaller agent?",
     "Yes — the framework is model-agnostic. We chose Claude because it "
     "has strong structured-output capability for the JSON design "
-    "vectors. A future ablation across LLM providers is a natural "
+    "vectors. A future ablation across agent providers is a natural "
     "extension but not needed for the current claims.")
 
 qna(doc,
-    "Doesn't using an LLM make the result non-reproducible?",
+    "Doesn't using an AI agent make the result non-reproducible?",
     "It would, if we didn't cache. We hash every prompt and cache the "
     "response under results/llm_cache/. The cache is checked into git "
     "under the tag phase-10-complete. Anyone replaying the thesis uses "
@@ -1896,8 +1896,8 @@ qna(doc,
     "τ is the time-constant in an exponential fit W(t) = W∞ + A·exp(−t/τ). "
     "It captures how many generations the algorithm needs to halve its "
     "remaining distance to the optimum. PSO has τ = 8.7 generations on "
-    "10-bar; GA has τ = 23.5; GA with LLM warm-start has τ = 14.9. So "
-    "the LLM shifts GA's convergence rate roughly halfway toward PSO's.")
+    "10-bar; GA has τ = 23.5; GA with agent warm-start has τ = 14.9. So "
+    "the agent shifts GA's convergence rate roughly halfway toward PSO's.")
 
 H2(doc, "14.9  Software-engineering / reproducibility questions")
 
@@ -1915,14 +1915,14 @@ qna(doc,
     "green. Run scripts/run_single.py with any of the logged seeds — "
     "should reproduce the table values. Run tectonic thesis_writeup/"
     "main.tex — should rebuild the 125-page PDF. No API key needed; "
-    "LLM responses are cached.")
+    "agent responses are cached.")
 
 qna(doc,
     "What's in the test suite?",
     "81 pytest cases. 21 on the FEM module (3-bar canonical, "
     "symmetry checks, equilibrium residuals). 22 on IS 800 compliance. "
     "12 on the optimizers (regression vs. known optima). 9 on the "
-    "surrogate (R² gates). 6 on the LLM cache layer. 11 on the API/UI "
+    "surrogate (R² gates). 6 on the agent cache layer. 11 on the API/UI "
     "and a few slow ‘gate’ tests for full benchmark runs.")
 
 qna(doc,
@@ -1949,7 +1949,7 @@ qna(doc,
     "search and dramatically increases dimensionality. It is also a "
     "different research problem — there is excellent literature on "
     "ground-structure approaches (Bendsøe-Sigmund 2003). Combining "
-    "our LLM warm-start with topology would be a strong follow-up "
+    "our agent warm-start with topology would be a strong follow-up "
     "thesis.")
 
 qna(doc,
@@ -1979,7 +1979,7 @@ para(doc,
      "good morning. I am Aryan, IDD Civil Year 5, roll number 21064030. "
      "My thesis is on an AI-powered framework for multi-objective steel "
      "truss optimization, integrating evolutionary algorithms, neural "
-     "surrogates, reinforcement learning, and LLM-assisted design under "
+     "surrogates, reinforcement learning, and agent-assisted design under "
      "IS 800:2007. My supervisor is Dr. Krishna Kant Pathak.’")
 
 H2(doc, "Outline (0:30 – 0:50)")
@@ -1999,7 +1999,7 @@ para(doc,
      "‘Optimization tools exist but a typical GA run takes 40 minutes "
      "per benchmark — too slow for iterative design.’")
 para(doc,
-     "‘So my research question is: can a large language model "
+     "‘So my research question is: can an AI design agent "
      "warm-start classical metaheuristics, so that they converge faster "
      "on truss sizing problems, while remaining IS 800-compliant?’")
 para(doc,
@@ -2009,7 +2009,7 @@ para(doc,
 para(doc,
      "‘In summary, five contributions: C1 — validation to 0.004 percent "
      "of literature on 10-bar. C2 — 132× surrogate speedup at R² = 0.9993. "
-     "C3 — a rigorously feasible 72-bar baseline. C4 — LLM warm-start "
+     "C3 — a rigorously feasible 72-bar baseline. C4 — agent warm-start "
      "cuts generations by 36.8 percent on 10-bar with p-value 0.0046. "
      "C5 — the full pipeline runs in under 10 seconds with no API key.’")
 
@@ -2041,7 +2041,7 @@ para(doc,
      "reward is negative weight minus infeasibility penalty. Trained for "
      "150,000 timesteps using Stable-Baselines3.’")
 para(doc,
-     "‘And finally the LLM warm-start. We send a structured prompt to "
+     "‘And finally the agent warm-start. We send a structured prompt to "
      "Claude describing the benchmark and ask for eight engineering-"
      "reasonable starting designs. These replace eight of the GA's 100 "
      "random initial designs. All responses are cached under "
@@ -2070,12 +2070,12 @@ para(doc,
      "use them as feasibility screens with FEM fallback at the constraint "
      "boundary.’")
 para(doc,
-     "‘The LLM warm-start effect-map shows the most important result. "
+     "‘The agent warm-start effect-map shows the most important result. "
      "On 10-bar, generations to convergence drop by 36.8 percent with "
      "p-value 0.0046 over 5 seeds per arm — significant. On 25-bar the "
      "drop is 76.6 percent but with only 3 seeds it is underpowered. On "
      "72-bar there is no detectable effect — plus 4.8 percent, p-value "
-     "0.81. The interpretation: the LLM helps most when it can surface "
+     "0.81. The interpretation: the agent helps most when it can surface "
      "an architectural insight. On 10-bar, Claude correctly identifies "
      "bars 2, 5, 6, and 10 as nearly redundant — a known result the GA "
      "would otherwise rediscover through trial and error.’")
@@ -2095,8 +2095,8 @@ para(doc,
 para(doc,
      "‘Convergence rate analysis. Fitting W(t) = W∞ + A·exp(−t/τ) to "
      "each seed's history gives time constants. PSO at 8.7 generations. "
-     "GA at 23.5. GA with LLM warm-start at 14.9 — about halfway "
-     "between. So the LLM warm-start mechanism is making GA behave like "
+     "GA at 23.5. GA with agent warm-start at 14.9 — about halfway "
+     "between. So the agent warm-start mechanism is making GA behave like "
      "PSO in terms of convergence speed.’")
 para(doc,
      "‘The hard- versus soft-constraint Pareto front comparison is "
@@ -2120,7 +2120,7 @@ para(doc,
      "requiring Python literacy.’")
 para(doc,
      "‘On reproducibility: every dependency is pinned, every seed is "
-     "logged, every LLM response is cached, all 89 references and 27 "
+     "logged, every agent response is cached, all 89 references and 27 "
      "figures are checked in, and a full pytest -m ‘not slow’ suite "
      "passes on every push. Anyone can rebuild the 125-page PDF and "
      "the 35-slide deck with one Tectonic command.’")
@@ -2128,19 +2128,19 @@ para(doc,
 H2(doc, "Part 6 — Conclusion (17:00 – 19:00)")
 para(doc,
      "‘What I am not claiming: FEM is linear-elastic, sizing-only, "
-     "single buckling curve, no PPO transfer learning, LLM is zero-shot "
+     "single buckling curve, no PPO transfer learning, agent is zero-shot "
      "not fine-tuned. These are limitations stated honestly — none of "
      "them are load-bearing for C1 through C5.’")
 para(doc,
      "‘Future work spans seven directions: F1 non-linear dynamic FEM for "
      "IS 1893 seismic, F2 topology optimization, F3 GNN surrogate, F4 "
-     "cross-instance PPO transfer, F5 fine-tuned domain LLM, F6 PGCIL "
+     "cross-instance PPO transfer, F5 fine-tuned domain agent, F6 PGCIL "
      "transmission-tower validation, F7 independent FEM cross-check of "
      "the 72-bar discrepancy.’")
 para(doc,
      "‘To summarise — the five contributions: 10-bar to literature at "
      "0.004 percent, 132× surrogate speedup at R² = 0.9993, a rigorously "
-     "feasible 72-bar baseline at 549 lb, LLM warm-start saves 36.8 "
+     "feasible 72-bar baseline at 549 lb, agent warm-start saves 36.8 "
      "percent of generations on 10-bar at p = 0.0046, and the entire "
      "IS 800-compliant pipeline runs under 10 seconds on a laptop CPU "
      "with no API key required to rebuild.’")
@@ -2181,7 +2181,7 @@ glossary = [
     ("Hyperparameter", "A parameter of the algorithm itself, not the design. Examples: population size, crossover η_c, mutation η_m, learning rate, dropout p."),
     ("IS 800:2007", "Bureau of Indian Standards code for general construction in steel. Limit State Design philosophy. Five clauses are implemented: 6.2, 6.3, 7.1, 5.6.1, 3.8."),
     ("Latin Hypercube Sampling (LHS)", "Space-filling sample design. Partitions each dimension into N bins, places one sample per bin, permutes across dimensions. Better marginal coverage than uniform random."),
-    ("Mann-Whitney U test", "Non-parametric statistical test for whether two distributions differ. Used because generations-to-convergence is not normally distributed. We report U-test p-values for LLM warm-start."),
+    ("Mann-Whitney U test", "Non-parametric statistical test for whether two distributions differ. Used because generations-to-convergence is not normally distributed. We report U-test p-values for agent warm-start."),
     ("MC-dropout", "Monte-Carlo Dropout. Keep dropout active at inference; multiple stochastic forward passes give a distribution. Variance approximates epistemic uncertainty (Gal & Ghahramani 2016)."),
     ("MDP", "Markov Decision Process. The mathematical framework for RL: states, actions, transitions, rewards. PPO trains a policy that operates inside an MDP."),
     ("Metaheuristic", "A high-level, problem-independent search strategy. GA, PSO, simulated annealing, etc. They don't require gradients — only the ability to RANK designs."),
@@ -2271,13 +2271,13 @@ rich_para(doc,
             False, False, INK)],
           size=11)
 
-H2(doc, "C4.  LLM warm-start reduces convergence generations")
+H2(doc, "C4.  agent warm-start reduces convergence generations")
 rich_para(doc,
-          [("Seeding the GA with 8 LLM-proposed designs cuts generations-to-convergence by ",
+          [("Seeding the GA with 8 agent-proposed designs cuts generations-to-convergence by ",
             False, False, INK),
            ("36.8% on 10-bar with p-value 0.0046",
             True, False, ACCENT),
-           (". Effect-map: ‒76.6% on 25-bar (underpowered, n=3); no effect on 72-bar (p=0.81). LLM helps when an architectural insight exists.",
+           (". Effect-map: ‒76.6% on 25-bar (underpowered, n=3); no effect on 72-bar (p=0.81). agent helps when an architectural insight exists.",
             False, False, INK)],
           size=11)
 
@@ -2287,7 +2287,7 @@ rich_para(doc,
             False, False, INK),
            ("end-to-end in under 10 s on a laptop CPU",
             True, False, ACCENT),
-           (" with no API key required — LLM responses are cached. Streamlit UI + FastAPI + thesis PDF all rebuild from the ",
+           (" with no API key required — agent responses are cached. Streamlit UI + FastAPI + thesis PDF all rebuild from the ",
             False, False, INK),
            ("phase-10-complete",
             True, False, ACCENT),
