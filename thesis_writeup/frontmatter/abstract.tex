@@ -29,7 +29,7 @@ near $\num{549}$~lb; we do not claim a literature match
 against the soft-penalty $\num{380}$~lb value commonly cited
 in the heuristic-optimisation literature, and flag an
 independent FEM cross-check of that value as future work.
-An LLM warm-start (Claude Opus~4.7) reduces
+An agent warm-start (Claude Opus~4.7) reduces
 generations-to-convergence on 10-bar by \num{36.8}~\% at
 paired-Wilcoxon $p=\num{0.0046}$ across \num{40} seeds, with
 the effect diminishing on larger benchmarks where no
@@ -38,15 +38,15 @@ Every reported optimum passes the IS~800:2007 slenderness,
 tension, compression, and serviceability-deflection checks.
 
 The complete framework --- FEM solver, three optimisers,
-surrogate, PPO agent, LLM designer, IS~800 compliance
+surrogate, PPO agent, design agent, IS~800 compliance
 module, FastAPI backend, and Streamlit UI --- ships as an
 open-source repository at tag \texttt{phase-10-complete}; the
 Streamlit demo reproduces every headline number in under ten
-seconds on a laptop CPU, with all LLM responses cached so that
+seconds on a laptop CPU, with all agent responses cached so that
 the pipeline runs offline without an Anthropic API key. The
 thesis thus contributes a validated, reproducible, and
 Indian-design-code-compliant AI-assisted truss-design aid
-together with a statistically significant LLM warm-start
+together with a statistically significant agent warm-start
 efficacy map for evolutionary truss sizing.
 
 \clearpage
