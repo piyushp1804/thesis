@@ -29,7 +29,7 @@ $\mathbf{x}\in\mathbb{R}^{n_\text{vars}}$ (member cross-sectional
 areas, possibly after symmetry grouping) is passed to either (a)
 the finite-element solver for an exact evaluation, (b) the neural
 surrogate for a 50-to-150$\times$ faster approximate evaluation, or
-(c) the LLM designer for a one-shot warm-start proposal that
+(c) the design agent for a one-shot warm-start proposal that
 bypasses the loop entirely. Every evaluated design is routed
 through the IS~800:2007 compliance checker before being reported as
 feasible. The eight layers communicate through three small data
@@ -56,7 +56,7 @@ reproducible.
   \caption{Framework architecture. Three horizontal bands
     group the modules by role: benchmarks and constraints on
     top, the compute kernels (FEM, surrogate, PPO) in the
-    middle, and the user-facing layers (LLM designer, FastAPI,
+    middle, and the user-facing layers (design agent, FastAPI,
     Streamlit) at the bottom. Every arrow is a synchronous
     Python call; there are no long-running services.}
   \label{fig:method:arch}
@@ -231,7 +231,7 @@ size \num{2}. Population size is \num{100} and generation budget is
   \centering
   \includegraphics[width=0.65\textwidth]{fig_3_2_ga_flowchart.png}
   \caption{Genetic-algorithm control flow. Orange arrows
-    denote the outer population loop; the optional LLM
+    denote the outer population loop; the optional agent
     warm-start replaces the random initialiser in the first
     box.}
   \label{fig:method:ga-flow}
@@ -436,10 +436,10 @@ in this thesis is inference speed (approximately \num{0.2}~s per
 design versus \num{30}~s for a fresh GA run), not single-
 instance optimality.
 
-\section{LLM Warm-Start Designer}
+\section{Agent Warm-Start Designer}
 \label{sec:method:llm}
 
-The LLM layer (\texttt{src/llm/}) queries Anthropic's Claude Opus
+The agent layer (\texttt{src/llm/}) queries Anthropic's Claude Opus
 API~\cite{anthropic-docs} for a one-shot warm-start design that is
 injected into the GA's initial population.
 
@@ -470,7 +470,7 @@ clips to the design bounds, and returns the vector ready for pymoo.
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=0.95\textwidth]{fig_3_7_llm_pipeline.png}
-  \caption{LLM warm-start pipeline: benchmark description is
+  \caption{agent warm-start pipeline: benchmark description is
     serialised into a chain-of-thought prompt; the (cached)
     Claude call returns a structured-JSON design which is
     parsed, clipped to the design bounds, and injected into
@@ -481,14 +481,14 @@ clips to the design bounds, and returns the vector ready for pymoo.
 
 \paragraph{Evaluation protocol.} \texttt{src/llm/evaluate.py}'s
 \texttt{compare\_warmstart\_vs\_random(n\_seeds)} runs two
-arms --- GA with LLM warm-start and GA with random initialisation
+arms --- GA with agent warm-start and GA with random initialisation
 --- across $n_\text{seeds}$ seeds. For each run it records the
 number of generations until the best feasible weight comes within
 $\num{1.0}~\%$ of the literature optimum. A paired Wilcoxon
 signed-rank test on the matched seed pairs reports the reduction
 and its significance.
 
-\paragraph{Validation gate.} On 10-bar with \num{40} seeds, LLM-
+\paragraph{Validation gate.} On 10-bar with \num{40} seeds, agent-
 warm-started GA converges in a mean of \num{128.3} generations
 against \num{203.1} for random initialisation, a reduction of
 \num{36.8}~\%, with paired-Wilcoxon $p = \num{0.0046}$. This
@@ -577,15 +577,15 @@ REST API with endpoints \texttt{/health},
 \texttt{/optimize}, and \texttt{/llm/suggest}. The
 \texttt{/optimize} endpoint accepts a benchmark name, algorithm
 (\texttt{ga}, \texttt{pso}, \texttt{nsga2}), generations, seed, and
-optional LLM warm-start flag; it returns the best design, best
+optional agent warm-start flag; it returns the best design, best
 weight, convergence history, and compliance report in JSON. The
-LLM warm-start is injected only for single-objective solvers
+agent warm-start is injected only for single-objective solvers
 (GA, PSO) because pymoo's NSGA-II does not accept an initial-
 population argument in the same form.
 
 \paragraph{Streamlit UI.} \texttt{src/app/ui.py} is a thin client
 over the FastAPI backend. It lets the user pick a benchmark and
-algorithm, toggle LLM warm-start, set seed and generation count,
+algorithm, toggle agent warm-start, set seed and generation count,
 and visualise the result: a convergence curve, a Pareto front
 (for NSGA-II), and a matplotlib rendering of the truss geometry
 with member cross-sections drawn at scale.
@@ -614,7 +614,7 @@ source modules against the research objectives they implement.
     \texttt{src/algorithms/}   & Classical optimiser accuracy (obj.~2) \\
     \texttt{src/ml/}           & Surrogate speedup + fidelity (obj.~3) \\
     \texttt{src/rl/}           & Reinforcement-learning feasibility (obj.~4) \\
-    \texttt{src/llm/}          & LLM warm-start benefit (obj.~5) \\
+    \texttt{src/llm/}          & agent warm-start benefit (obj.~5) \\
     \texttt{src/constraints/}  & IS~800:2007 compliance (obj.~6) \\
     \texttt{src/app/}          & Streamlit demo \mbox{$<\num{10}$~s}  (obj.~6) \\
     \bottomrule
@@ -654,7 +654,7 @@ simplifications.
 \State seed RNGs: \texttt{np.random.seed}$(s)$; \texttt{random.seed}$(s)$
 \State $\mathcal{P}_0 \gets \text{LHS}(\mathcal{B}.\text{bounds},N)$
 \If{$\mathbf{x}_0$ supplied}
-  \State $\mathcal{P}_0[0] \gets \mathbf{x}_0$ \Comment{LLM warm-start replaces one individual}
+  \State $\mathcal{P}_0[0] \gets \mathbf{x}_0$ \Comment{agent warm-start replaces one individual}
 \EndIf
 \For{$t=0,\dotsc,G-1$}
   \State evaluate $\mathcal{P}_t$: compute $(W,\mathbf{g})$ via FEM + IS~800 checker
@@ -744,12 +744,12 @@ simplifications.
 \end{algorithmic}
 \end{algorithm}
 
-\subsection{LLM Warm-Start Designer}
+\subsection{Agent Warm-Start Designer}
 \label{sec:method:pseudocode:llm}
 
 \begin{algorithm}[H]
 \small
-\caption{LLM warm-start (\texttt{src/llm/warmstart.py})}
+\caption{agent warm-start (\texttt{src/llm/warmstart.py})}
 \label{alg:llm}
 \begin{algorithmic}[1]
 \Require benchmark $\mathcal{B}$, model endpoint $\mathcal{M}$, cache
@@ -817,7 +817,7 @@ simplifications.
       & optimiser / lr                      & Adam / \num{1e-3} \\
       & epochs                              & \num{300} (early-stop $\Delta<\num{1e-5}$) \\
     \midrule
-    \multirow{4}{*}{LLM warm-start}
+    \multirow{4}{*}{agent warm-start}
       & model                               & Claude Opus 4.7 \\
       & temperature                         & \num{0.2} \\
       & queries per benchmark               & \num{30} \\

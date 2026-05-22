@@ -82,7 +82,7 @@ evolutionary inner loop, yielding a $50$--$150$-fold speedup
 policy, trained against the same surrogate, can propose
 near-optimal designs in a single forward pass, skipping the
 evolutionary search entirely \cite{hayashi2020rl,brown2022rl}.
-A large language model, asked in natural language for a plausible
+A AI design agent, asked in natural language for a plausible
 design for a stated geometry and loading, can produce a
 starting-point design vector that warm-starts the
 evolutionary search and cuts generations-to-convergence
@@ -164,9 +164,9 @@ measurable validation gate:
         (surrogate-accelerated) and demonstrate convergence to
         within $\num{5}\,\%$ of the literature optimum on at
         least three of four benchmarks.
-  \item \textbf{LLM warm-start benefit.} Show that seeding the
+  \item \textbf{agent warm-start benefit.} Show that seeding the
         initial GA population with a design vector proposed by an
-        LLM (Anthropic Claude API) reduces the mean number of
+        agent (Anthropic Claude API) reduces the mean number of
         generations-to-convergence by $\num{20}$--$\num{30}\,\%$
         relative to random initialisation on at least three of the
         four benchmarks, with paired-Wilcoxon $p < 0.05$.
@@ -175,7 +175,7 @@ measurable validation gate:
         composite constraint functions; verify every reported
         optimal design passes the full compliance check; and
         package the entire framework (optimisers, surrogate,
-        RL agent, LLM client, compliance checks) behind a Streamlit
+        RL agent, agent client, compliance checks) behind a Streamlit
         demo that completes a full 10-bar optimisation in under
         ten seconds.
 \end{enumerate}
@@ -219,20 +219,20 @@ The remainder of the thesis is organised as follows.
 optimisation, from Schmit's founding 1960s formulations through the
 evolutionary-algorithm era up to the contemporary machine-learning
 literature. It positions each of the three AI accelerators (neural
-surrogate, RL, LLM) against its closest published precedent and
+surrogate, RL, agent) against its closest published precedent and
 identifies the integrative gap this thesis fills.
 
 \textbf{Chapter~3 (Methodology)} describes the five-layer
 computational architecture in detail: the finite-element engine, the
 classical-optimiser wrappers, the neural surrogate, the PPO agent,
-the LLM warm-start pipeline, and the IS~800:2007 compliance
+the agent warm-start pipeline, and the IS~800:2007 compliance
 checker. The chapter specifies exact hyperparameters, training
 protocols, and the inter-layer data contracts that make the
 framework modular.
 
 \textbf{Chapter~4 (Results)} presents the numerical findings: per-
 benchmark convergence for each optimiser, surrogate accuracy and
-achieved speedup, RL agent performance, LLM-warm-start convergence
+achieved speedup, RL agent performance, agent-warm-start convergence
 reductions, multi-objective Pareto fronts, and IS~800:2007
 compliance verification. Each result is reported with cross-seed
 statistics and compared to the published literature optimum.
