@@ -23,7 +23,19 @@
 \usepackage{algpseudocode}
 \usepackage{multirow}
 
-\usepackage[hidelinks,colorlinks=false,bookmarks=true]{hyperref}
+% Red boxed cross-references (equation / figure / table / section links),
+% matching the reference-thesis style. Boxes are screen annotations and do
+% not appear when printed. To remove them entirely, swap this whole block
+% for: \usepackage[hidelinks,colorlinks=false,bookmarks=true]{hyperref}
+\usepackage[colorlinks=false,bookmarks=true]{hyperref}
+\hypersetup{
+  pdfborder={0 0 1},               % draw a 1pt border around links
+  linkbordercolor={1 0 0},         % internal links (\ref/\cref/\eqref) -> red
+  citebordercolor={1 0 0},         % citations -> red
+  urlbordercolor={1 0 0},          % URLs -> red
+  pdftitle={\thesistitle},
+  pdfauthor={\thesisauthor}
+}
 \usepackage[capitalise,noabbrev]{cleveref}
 
 \usepackage[backend=bibtex,style=ieee,sorting=none]{biblatex}
@@ -39,5 +51,6 @@ and Agent-Assisted Design}
 \newcommand{\thesisinstitute}{Indian Institute of Technology (BHU), Varanasi}
 \newcommand{\thesisinstitutefull}{INDIAN INSTITUTE OF TECHNOLOGY\\(BANARAS HINDU UNIVERSITY)\\VARANASI -- 221\,005}
 \newcommand{\thesisdegree}{Integrated Dual Degree (IDD)}
-\newcommand{\thesisdiscipline}{Civil Engineering}
+\newcommand{\thesisdiscipline}{Civil and Structural Engineering}
+\newcommand{\thesisperiod}{July 2025 to May 2026}
 \newcommand{\thesisyear}{May 2026}
