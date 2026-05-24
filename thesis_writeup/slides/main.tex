@@ -68,7 +68,7 @@
 \setbeamertemplate{footline}{%
   \hfill\raisebox{0.5em}{%
     \footnotesize\color{inkmuted}%
-    Aryan \ (21064030)\quad|\quad IIT\,(BHU)\quad|\quad
+    Aryan Gupta \ (21064030)\quad|\quad IIT\,(BHU)\quad|\quad
     \insertframenumber\,/\,\inserttotalframenumber
   }\hspace*{1em}\vspace*{0.4em}%
 }
@@ -77,9 +77,18 @@
 
 % ---------- layout helpers ----------
 \newcommand{\bignum}[2]{%
-  \begin{minipage}{\linewidth}\raggedright
+  \begin{minipage}[t]{\linewidth}\raggedright
     {\fontsize{56}{60}\selectfont\bfseries\color{accent}#1}\\[0.15em]
     {\fontsize{12}{14}\selectfont\color{inkmuted}#2}
+  \end{minipage}%
+}
+% Compact variant for multi-column contribution cards (prevents the big
+% number from overflowing a narrow column and overlapping its neighbour).
+\newcommand{\cardnum}[2]{%
+  \begin{minipage}[t]{\linewidth}\raggedright
+    {\fontsize{22}{24}\selectfont\bfseries\color{accent}#1}\par
+    \vspace{0.35em}
+    {\fontsize{9}{11}\selectfont\color{inkmuted}#2\par}
   \end{minipage}%
 }
 
@@ -109,7 +118,7 @@
 % ---------- metadata ----------
 \title{AI-Powered Framework for Multi-Objective Steel Truss Optimization}
 \subtitle{Integrating Evolutionary Algorithms, Neural Surrogates, Reinforcement Learning, and Agent-Assisted Design under IS~800:2007}
-\author{Aryan\\\footnotesize Roll 21064030 \ \ \textbullet\ \ IDD Civil (Y5)}
+\author{Aryan Gupta\\\footnotesize Roll 21064030 \ \ \textbullet\ \ IDD Civil (Y5)}
 \institute{Department of Civil Engineering\\\footnotesize Indian Institute of Technology (BHU) Varanasi}
 \date{M.Tech / IDD Viva Presentation \textbullet\ 2026}
 
@@ -122,27 +131,32 @@
 \setbeamertemplate{footline}{}
 \setbeamertemplate{frametitle}{}
 \begin{frame}[plain]
-  \vspace*{0.5cm}
+  \vspace*{0.3cm}
+  % IIT (BHU) logo, top-right. Drop figures/iitbhu_logo.png to show it.
+  \IfFileExists{../figures/iitbhu_logo.png}{%
+    \hfill\raisebox{-0.2cm}{\includegraphics[height=1.7cm]{iitbhu_logo.png}}\par
+    \vspace{-1.4cm}
+  }{}%
   \begin{minipage}{\linewidth}\raggedright
-    {\fontsize{9}{11}\selectfont\color{inkmuted}\MakeUppercase{M.Tech / IDD Thesis Viva \ \textbullet\ \ 2026}\par}
-    \vspace{1.2em}
+    {\fontsize{9}{11}\selectfont\color{inkmuted}\MakeUppercase{IDD Thesis Viva \ \textbullet\ \ 2026}\par}
+    \vspace{1.0em}
     {\fontsize{26}{32}\selectfont\bfseries\color{ink}AI-Powered Framework for\\[0.1em]Multi-Objective Steel Truss Optimization\par}
     \vspace{0.6em}
     {\fontsize{14}{18}\selectfont\color{inkmuted}Integrating evolutionary algorithms, neural surrogates,\\
      reinforcement learning, and agent-assisted design under IS~800:2007\par}
 
-    \vspace{2.2em}
+    \vspace{2.0em}
     \textcolor{rule}{\rule{0.22\linewidth}{0.6pt}}
     \vspace{0.6em}
 
-    {\fontsize{13}{16}\selectfont\bfseries\color{ink}Aryan\par}
+    {\fontsize{13}{16}\selectfont\bfseries\color{ink}Aryan Gupta\par}
     {\fontsize{10}{12}\selectfont\color{inkmuted}%
      Roll \textbf{21064030} \ \textbullet\ \ IDD Civil Engineering (Year~5)\par}
     \vspace{0.4em}
     {\fontsize{11}{13}\selectfont\color{ink}Supervisor: \textbf{Dr.~Krishna Kant Pathak}\par}
     {\fontsize{10}{12}\selectfont\color{inkmuted}%
      Department of Civil Engineering\\
-     Indian Institute of Technology (BHU) Varanasi \textbullet\ April 2026\par}
+     Indian Institute of Technology (BHU) Varanasi \textbullet\ May 2026\par}
   \end{minipage}
 \end{frame}
 \endgroup
@@ -222,12 +236,17 @@
 \end{frame}
 
 \begin{frame}{Five contributions, in one view}{The headline numbers I will defend}
+  \vspace{0.4em}
   \begin{columns}[t,onlytextwidth]
-    \column{0.19\linewidth} \bignum{0.004\%}{\textbf{C1} \ \ 10-bar error vs. Sunar \& Belegundu 1991 \textendash\ end-to-end stack validation}
-    \column{0.19\linewidth} \bignum{132$\times$}{\textbf{C2} \ \ wall-clock speedup via MLP surrogate at $R^2=0.9993$ on weight}
-    \column{0.19\linewidth} \bignum{549\,lb}{\textbf{C3} \ \ rigorously-feasible 72-bar baseline; gap vs.\ soft-penalty literature value \textendash\ observation pending FEM cross-check}
-    \column{0.19\linewidth} \bignum{-36.8\%}{\textbf{C4} \ \ fewer generations to converge with agent warm-start, $p=0.0046$}
-    \column{0.19\linewidth} \bignum{<10\,s}{\textbf{C5} \ \ full IS~800 pipeline, laptop CPU, no API key required}
+    \column{0.18\linewidth} \cardnum{0.004\%}{\textbf{C1} \ 10-bar error vs.\ Sunar \& Belegundu 1991 --- end-to-end stack validation}
+    \hfill
+    \column{0.18\linewidth} \cardnum{132$\times$}{\textbf{C2} \ wall-clock speedup via MLP surrogate at $R^2=0.9993$ on weight}
+    \hfill
+    \column{0.18\linewidth} \cardnum{549\,lb}{\textbf{C3} \ rigorously-feasible 72-bar baseline; gap vs.\ soft-penalty value --- observation pending FEM cross-check}
+    \hfill
+    \column{0.18\linewidth} \cardnum{$-36.8\%$}{\textbf{C4} \ fewer generations to converge with agent warm-start, $p=0.0046$}
+    \hfill
+    \column{0.18\linewidth} \cardnum{$<$10\,s}{\textbf{C5} \ full IS~800 pipeline, laptop CPU, no API key required}
   \end{columns}
 \end{frame}
 
@@ -441,7 +460,7 @@
   \footnotesize\color{inkmuted}Stress/displacement heads used as feasibility screens with FEM fallback.
 \end{frame}
 
-\begin{frame}{agent warm-start effect-map}{C4 \ \textbullet\ \ cuts generations most when an architectural insight exists}
+\begin{frame}{Agent warm-start effect-map}{C4 \ \textbullet\ \ cuts generations most when an architectural insight exists}
   \begin{columns}[T,onlytextwidth]
     \column{0.58\linewidth}
       \centering\includegraphics[width=\linewidth]{fig_4_8_1_llm_vs_random.png}
@@ -630,7 +649,7 @@
     {\fontsize{36}{40}\selectfont\bfseries\color{ink}Questions?\par}
     \vspace{1.8em}
     {\fontsize{12}{16}\selectfont\color{ink}%
-      Aryan \ \textbullet\ \ Roll \textbf{21064030} \ \textbullet\ \ IDD Civil (Y5)\par}
+      Aryan Gupta \ \textbullet\ \ Roll \textbf{21064030} \ \textbullet\ \ IDD Civil (Y5)\par}
     {\fontsize{11}{14}\selectfont\color{inkmuted}%
       Supervisor: Dr.~Krishna Kant Pathak\\
       Department of Civil Engineering, IIT (BHU) Varanasi\\[0.5em]
