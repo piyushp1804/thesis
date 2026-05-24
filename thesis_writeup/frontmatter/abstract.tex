@@ -1,52 +1,32 @@
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
 
-Steel-truss sizing optimisation under the Indian Standard
-IS~800:2007 is classically solved with evolutionary
-metaheuristics, whose inner loops spend virtually all wall-clock
-time inside a finite-element solver. This thesis develops an
-integrated Python framework that composes classical
-evolutionary optimisation (GA, PSO, NSGA-II) with three modern
-AI layers --- a neural surrogate, a reinforcement-learning
-agent, and a large-language-model warm-start designer --- into
-one reproducible system, and validates the framework against
-four canonical benchmarks: the 10-bar planar, 25-bar spatial,
-72-bar spatial tower, and 200-bar planar stepped tower.
+Steel-truss sizing under IS~800:2007 is classically solved with
+evolutionary metaheuristics whose inner loops spend almost all
+wall-clock time inside a finite-element solver. This thesis develops a
+reproducible Python framework that combines classical evolutionary
+optimisation (GA, PSO, NSGA-II) with three modern AI layers --- a neural
+surrogate, a reinforcement-learning agent, and an AI design-agent
+warm-start --- and validates it on four canonical benchmarks: the
+10-bar planar, 25-bar spatial, 72-bar spatial tower, and 200-bar stepped
+tower.
 
-The framework matches the published optima of Sunar~\&
-Belegundu (1991) on 10-bar to \num{5061.05}~lb against the
-reported \num{5060.85}~lb (\num{0.004}~\% error), and
-Schmit~\& Miura (1976) on 25-bar to \num{545.26}~lb against
-\num{545.22}~lb (\num{0.008}~\% error). A three-hidden-layer
-MLP surrogate trained on \num{10000} Latin-hypercube samples
-achieves $R^2=\num{0.9993}$ on weight prediction and delivers
-a $\num{132}\times$ wall-clock speedup, with
-surrogate-in-loop optima matching FEM-in-loop optima to
-$\num{0.09}\,\%$. On the 72-bar spatial tower our hard-
-constraint ($g\le 0$) GA, PSO, and NSGA-II converge with
-cross-seed spread under $\num{1}\,\%$ to a feasible optimum
-near $\num{549}$~lb; we do not claim a literature match
-against the soft-penalty $\num{380}$~lb value commonly cited
-in the heuristic-optimisation literature, and flag an
-independent FEM cross-check of that value as future work.
-An agent warm-start (Claude Opus~4.7) reduces
-generations-to-convergence on 10-bar by \num{36.8}~\% at
-paired-Wilcoxon $p=\num{0.0046}$ across \num{40} seeds, with
-the effect diminishing on larger benchmarks where no
-comparable architectural insight is available to the model.
-Every reported optimum passes the IS~800:2007 slenderness,
-tension, compression, and serviceability-deflection checks.
-
-The complete framework --- FEM solver, three optimisers,
-surrogate, PPO agent, design agent, IS~800 compliance
-module, FastAPI backend, and Streamlit UI --- ships as an
-open-source repository at tag \texttt{phase-10-complete}; the
-Streamlit demo reproduces every headline number in under ten
-seconds on a laptop CPU, with all agent responses cached so that
-the pipeline runs offline without an Anthropic API key. The
-thesis thus contributes a validated, reproducible, and
-Indian-design-code-compliant AI-assisted truss-design aid
-together with a statistically significant agent warm-start
-efficacy map for evolutionary truss sizing.
+The framework reproduces published optima on 10-bar to
+\num{5061.05}~lb (\num{0.004}~\% error) and 25-bar to \num{545.26}~lb
+(\num{0.008}~\% error). A three-hidden-layer MLP surrogate trained on
+\num{10000} Latin-hypercube samples reaches $R^2=\num{0.9993}$ on weight
+and gives a $\num{132}\times$ wall-clock speedup, with
+surrogate-in-loop optima matching FEM to $\num{0.09}\,\%$. On the 72-bar
+tower the hard-constraint solvers converge with cross-seed spread under
+$\num{1}\,\%$ to a feasible optimum near $\num{549}$~lb; we flag the gap
+versus the soft-penalty $\num{380}$~lb literature value as an observation
+pending an independent FEM cross-check. An agent warm-start reduces
+generations-to-convergence on 10-bar by \num{36.8}~\%
+($p=\num{0.0046}$), with the effect diminishing on larger benchmarks
+where no comparable architectural insight is available. Every reported
+optimum passes the IS~800:2007 slenderness, tension, compression, and
+serviceability checks, and the full pipeline --- shipped at tag
+\texttt{phase-10-complete} --- reproduces every headline number in under
+ten seconds on a laptop CPU, offline, with all agent responses cached.
 
 \clearpage
