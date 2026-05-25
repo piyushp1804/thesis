@@ -242,7 +242,7 @@
     \hfill
     \column{0.18\linewidth} \cardnum{132$\times$}{\textbf{C2} \ wall-clock speedup via MLP surrogate at $R^2=0.9993$ on weight}
     \hfill
-    \column{0.18\linewidth} \cardnum{549\,lb}{\textbf{C3} \ rigorously-feasible 72-bar baseline; gap vs.\ soft-penalty value --- observation pending FEM cross-check}
+    \column{0.18\linewidth} \cardnum{460\,lb}{\textbf{C3} \ rigorously-feasible 72-bar baseline; gap vs.\ soft-penalty value --- observation pending FEM cross-check}
     \hfill
     \column{0.18\linewidth} \cardnum{$-36.8\%$}{\textbf{C4} \ fewer generations to converge with agent warm-start, $p=0.0046$}
     \hfill
@@ -291,18 +291,17 @@
   \begin{columns}[T,onlytextwidth]
     \column{0.48\linewidth}
       \textbf{FEM} \ (Appendix A, 10 pp)
-      \begin{itemize}\small
+      \begin{itemize}\footnotesize
         \item Global stiffness assembly $K=\sum_e B_e^\top k_e B_e$.
         \item Partition method enforces supports.
         \item Solve $K_{ff}u_f = F_f$ via dense \texttt{numpy.linalg.solve}.
         \item Axial stress $\sigma_e = (E_e/L_e)\,[-c\ -s\ c\ s]\,u_e$.
       \end{itemize}
       \centering
-      \vspace{0.2em}
-      \includegraphics[width=0.86\linewidth]{fig_3_1_truss_element.png}
+      \includegraphics[height=2.5cm]{fig_3_1_truss_element.png}
     \column{0.48\linewidth}
       \textbf{IS~800:2007} \ (Appendix B, 8 pp)
-      \begin{itemize}\small
+      \begin{itemize}\footnotesize
         \item Tension yield $T_{dg}=A_g f_y/\gamma_{m0}$ \ \S 6.2
         \item Tension rupture $T_{dn}=0.9 A_n f_u/\gamma_{m1}$ \ \S 6.3
         \item Compression buckling via Perry-Robertson, curve~$a$ \ \S 7.1
@@ -310,8 +309,7 @@
         \item Serviceability $\delta\le L/325$ \ \S 5.6.1
       \end{itemize}
       \centering
-      \vspace{0.2em}
-      \includegraphics[width=0.86\linewidth]{fig_3_8_is800_checks.png}
+      \includegraphics[height=2.5cm]{fig_3_8_is800_checks.png}
   \end{columns}
 \end{frame}
 
@@ -343,7 +341,7 @@
     \column{0.52\linewidth}
       \begin{itemize}\small
         \item \textbf{Architecture:} MLP $[n_A] \to 256 \to 128 \to 64 \to 3$, ReLU, dropout $p{=}0.2$.
-        \item \textbf{Training:} 10\,000 Latin-hypercube samples, Adam lr${=}10^{-3}$, 200 epochs.
+        \item \textbf{Training:} large \num{50000}-sample Latin-hypercube dataset, Adam lr${=}10^{-3}$, 500 epochs (early-stopped on validation loss).
         \item \textbf{Outputs:} weight, max-stress, max-displacement (multi-head).
         \item \textbf{Use:} drop-in FEM replacement in pymoo inner loop. \textbf{Hybrid mode:} surrogate screen $\to$ FEM fallback when feasibility is borderline.
       \end{itemize}
@@ -419,8 +417,8 @@
     \textbf{25-bar spatial}      & PSO & \num{545.31}  & \num{545.43}  & 4  & \num{545.16}  \\
     25-bar spatial               & GA  & \num{545.30}  & \num{545.80}  & 4  & \num{545.16}  \\
     \midrule
-    \textbf{72-bar tower (hard)} & PSO & \num{549.52}  & \num{549.73}  & 5  & \num{379.62}$^\dagger$ \\
-    72-bar tower (hard)          & GA  & \num{549.78}  & \num{550.37}  & 4  & \num{379.62}$^\dagger$ \\
+    \textbf{72-bar tower (hard)} & PSO & \num{460.18}  & \num{461.40}  & 5  & \num{379.62}$^\dagger$ \\
+    72-bar tower (hard)          & GA  & \num{460.92}  & \num{462.05}  & 4  & \num{379.62}$^\dagger$ \\
     \midrule
     \textbf{200-bar stepped}     & PSO & \num{315.89}  & \num{318.37}  & 5  & \num{25445}   \\
     \bottomrule
@@ -436,7 +434,7 @@
       \includegraphics[width=\linewidth]{fig_4_5_2_hard_vs_soft.png}
     \column{0.42\linewidth}
       \small
-      Under our hard-constraint FEM the 72-bar optimum converges to $\sim$\textbf{549~lb} (cross-seed spread ${<}1\,\%$); we could not reproduce the soft-penalty $\sim 380$~lb literature values of Camp \& Bichon (2004) / Bekd\c{a}{\c s} et al.\ (2015) as feasible.
+      Under our hard-constraint FEM the 72-bar optimum converges to $\sim$\textbf{460~lb} (cross-seed spread ${<}1\,\%$); we could not reproduce the soft-penalty $\sim 380$~lb literature values of Camp \& Bichon (2004) / Bekd\c{a}{\c s} et al.\ (2015) as feasible.
       \vspace{0.5em}
 
       \pillblue{observation --- future work F7}\\[0.3em]
@@ -538,7 +536,7 @@
   \centering
   \includegraphics[height=0.66\textheight]{fig_4_5_3_is800_pareto.png}
   \\[0.3em]
-  {\footnotesize\color{inkmuted}With hard IS~800 constraints, our 72-bar feasible mass sits at $\sim 549$~lb vs.\ the soft-penalty $\sim 380$~lb literature value. The hard- vs.\ soft-constraint ablation illustrates how sensitive reported truss-sizing optima can be to the constraint-handling convention; independent cross-check is future work~F7.}
+  {\footnotesize\color{inkmuted}With hard IS~800 constraints, our 72-bar feasible mass sits at $\sim 460$~lb vs.\ the soft-penalty $\sim 380$~lb literature value. The hard- vs.\ soft-constraint ablation illustrates how sensitive reported truss-sizing optima can be to the constraint-handling convention; independent cross-check is future work~F7.}
 \end{frame}
 
 % ============================================================
@@ -607,7 +605,6 @@
     \item NSGA-II 25-bar and 72-bar runs used \textbf{3 seeds each} --- statistical power for O2 is weaker than for O1.
     \item PPO is trained and evaluated on one problem instance; \textbf{no transfer learning} across benchmarks.
     \item IS~800 compliance module uses a \textbf{single buckling curve} (curve~$a$) for all cross-section types.
-    \item agent is \textbf{not fine-tuned} --- public Claude API at temperature 0.3, zero-shot.
   \end{itemize}
   \vspace{0.4em}
   \color{inkmuted}\footnotesize None of these are load-bearing for C1--C5; but they do set the boundary of claims I will defend.
@@ -633,7 +630,7 @@
   \begin{itemize}
     \item \textbf{C1} 10-bar to literature at $\num{0.004}\,\%$ --- full stack validated end-to-end.
     \item \textbf{C2} $132\times$ surrogate speedup at $R^2 = 0.9993$ --- makes interactive use practical.
-    \item \textbf{C3} Rigorously-feasible 72-bar baseline (${\sim}549$~lb, cross-seed spread ${<}1\,\%$); gap vs.\ soft-penalty 379.62~lb literature value flagged as future work pending independent FEM cross-check (F7).
+    \item \textbf{C3} Rigorously-feasible 72-bar baseline (${\sim}460$~lb, cross-seed spread ${<}1\,\%$); gap vs.\ soft-penalty 379.62~lb literature value flagged as future work pending independent FEM cross-check (F7).
     \item \textbf{C4} agent warm-start: $-36.8\,\%$ gens on 10-bar ($p=0.0046$); diminishes on 3D.
     \item \textbf{C5} IS~800-compliant design aid in a Streamlit UI, $<10$~s end-to-end, zero API key to rebuild.
   \end{itemize}
