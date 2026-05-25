@@ -10,7 +10,16 @@ for the demo — simpler setup, identical results). The FastAPI layer in
 
 from __future__ import annotations
 
+import os
+import sys
 import time
+
+# Make `import src...` work no matter how the app is launched
+# (e.g. `streamlit run src/app/ui.py` puts src/app on the path, not the
+# repo root). Insert the repo root (two levels up) at the front of sys.path.
+_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
 
 import numpy as np
 import pandas as pd
