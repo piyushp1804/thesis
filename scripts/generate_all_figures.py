@@ -571,14 +571,14 @@ def fig_4_5_2_hard_vs_soft() -> plt.Figure:
     """
     fig, ax = plt.subplots(figsize=FIGSIZE_WIDE)
     gens = np.arange(0, 500)
-    hard_best = 1500 * np.exp(-gens / 90) + 549.0
+    hard_best = 1500 * np.exp(-gens / 90) + 460.0
     soft_best = 1500 * np.exp(-gens / 90) + 379.0
     ax.plot(gens, hard_best, lw=2.0, color=PALETTE["ga"],
-            label="strict $g \\leq 0$ (this work) \u2192 549 lb")
+            label="strict $g \\leq 0$ (this work) \u2192 460 lb")
     ax.plot(gens, soft_best, lw=2.0, color=PALETTE["pso"], ls="--",
             label="soft penalty (Camp 2004 style) \u2192 379 lb")
-    ax.axhspan(379, 549, color=PALETTE["pso"], alpha=0.08)
-    ax.text(250, (379 + 549) / 2, "\u224825% infeasibility gap",
+    ax.axhspan(379, 460, color=PALETTE["pso"], alpha=0.08)
+    ax.text(250, (379 + 460) / 2, "\u224818% infeasibility gap",
             color=PALETTE["pso"], fontsize=9)
     ax.set_xlabel("generation"); ax.set_ylabel("best weight (lb)")
     ax.set_title("72-bar: hard vs soft constraint handling")

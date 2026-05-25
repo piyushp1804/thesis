@@ -18,7 +18,7 @@ Python framework (\texttt{src/} $+$ \texttt{scripts/} $+$
 \texttt{thesis\_writeup/}) that composes seven previously-separate
 research threads --- classical evolutionary optimisation
 (GA/PSO/NSGA-II), finite-element analysis, neural surrogates,
-reinforcement learning, LLM warm-start, IS~800:2007 compliance
+reinforcement learning, agent warm-start, IS~800:2007 compliance
 checking, and a Streamlit+FastAPI user interface --- into one
 reproducible system. The PSO-best on the 10-bar benchmark
 matches Sunar \& Belegundu's 1991 published optimum
@@ -52,18 +52,18 @@ methodological observation rather than a correction
 (\cref{sec:results:72bar},
 \cref{sec:results:ablation:constraints}).
 
-\paragraph{C4. An LLM warm-start efficacy map.} On the smallest
-benchmark (10-bar, \num{40} seeds), an LLM warm-start reduces
+\paragraph{C4. An agent warm-start efficacy map.} On the smallest
+benchmark (10-bar, \num{40} seeds), an agent warm-start reduces
 generations-to-convergence by $\num{36.8}~\%$ against random
 initialisation at paired-Wilcoxon $p=\num{0.0046}$ --- a strong
-positive result driven by the LLM's ability to identify the
+positive result driven by the agent's ability to identify the
 redundant-member set $\{2, 5, 6, 10\}$. On the two larger 3D
 benchmarks the effect weakens: $\num{76.6}\,\%$ generation
 reduction on 25-bar ($p=\num{0.25}$ with only three seeds) and
 a null result on 72-bar ($-\num{4.8}~\%$ at $p=\num{0.81}$,
-five seeds). The result maps out where LLM assistance helps in
+five seeds). The result maps out where agent assistance helps in
 the structural-optimisation pipeline: it helps most where
-the LLM can surface an architectural insight --- redundant
+the agent can surface an architectural insight --- redundant
 members, symmetry groups --- that the GA would otherwise
 rediscover through trial and error
 (\cref{sec:results:llm}).
@@ -71,15 +71,15 @@ rediscover through trial and error
 \paragraph{C5. An IS~800:2007-compliant, reproducible design
 aid.} The Streamlit UI of \cref{sec:method:ui} exposes the full
 stack --- benchmark selection, algorithm choice, surrogate
-toggle, LLM warm-start toggle, IS~800 compliance report --- as
+toggle, agent warm-start toggle, IS~800 compliance report --- as
 a single-command web app that a civil-engineering practitioner
 can drive without writing Python. The complete pipeline
 including IS~800 checking and a confidence-ranked
-LLM-suggested cross-check finishes in under ten seconds on
+agent-suggested cross-check finishes in under ten seconds on
 10-bar on a laptop CPU. The repository is pinned to
 \texttt{tag: phase-10-complete}; every reported number is
 reproducible against that tag without an Anthropic API key
-because all LLM responses are cached under
+because all agent responses are cached under
 \texttt{results/llm\_cache/}.
 
 \section{Answers to the Research Objectives}
@@ -125,11 +125,11 @@ transferability framing. This is reported as a mixed result
 rather than a claimed success
 (\cref{sec:results:rl,sec:results:threats}).
 
-\paragraph{Objective 5 --- LLM warm-start reduces generations-
+\paragraph{Objective 5 --- agent warm-start reduces generations-
 to-convergence by at least \num{20}\,\%.} Achieved on 10-bar
 ($\num{36.8}\,\%$ reduction, $p<\num{0.005}$); not reliably on
 larger benchmarks. The effect-map finding of
-\cref{sec:results:llm} is itself the contribution: the LLM
+\cref{sec:results:llm} is itself the contribution: the agent
 helps where it can add qualitative architectural insight.
 
 \section{Practical Implications for Indian Civil Engineering}
@@ -160,7 +160,7 @@ a final design.
 Third, the Streamlit UI exposes the whole stack in a form that
 does not require Python literacy: an IIT~BHU M.Tech project
 student, or a junior engineer at a consulting firm, can drive
-an LLM-assisted IS~800-compliant optimisation without
+an agent-assisted IS~800-compliant optimisation without
 writing code. The ten-second turnaround makes it usable during
 a design-review meeting rather than as a background batch job.
 
@@ -180,7 +180,7 @@ optimised. Seed counts are small on 25-bar and 72-bar NSGA-II
 (three each), and the PPO agent is trained and evaluated on a
 single problem instance without transfer learning. The IS~800
 compliance module uses a single column-buckling curve (curve
-$a$) regardless of cross-section type, and the LLM is not
+$a$) regardless of cross-section type, and the agent is not
 fine-tuned --- it is accessed through the public Anthropic
 Claude API at temperature \num{0.3}.
 
@@ -237,7 +237,7 @@ transferability claim: that the value of RL lies in
 cross-instance generalisation. The architecture extension is
 modest; the compute is a few GPU-days.
 
-\paragraph{F5. Fine-tuned domain-specific LLM.} The LLM
+\paragraph{F5. Fine-tuned domain-specific agent.} The agent
 warm-start in this thesis uses the public Claude API
 unmodified. A next iteration would fine-tune an open-weights
 model (e.g.\ Llama 3, Mistral, or Qwen) on a corpus of

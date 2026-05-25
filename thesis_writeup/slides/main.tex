@@ -68,7 +68,7 @@
 \setbeamertemplate{footline}{%
   \hfill\raisebox{0.5em}{%
     \footnotesize\color{inkmuted}%
-    Aryan \ (21064030)\quad|\quad IIT\,(BHU)\quad|\quad
+    Aryan Gupta \ (21064030)\quad|\quad IIT\,(BHU)\quad|\quad
     \insertframenumber\,/\,\inserttotalframenumber
   }\hspace*{1em}\vspace*{0.4em}%
 }
@@ -77,9 +77,18 @@
 
 % ---------- layout helpers ----------
 \newcommand{\bignum}[2]{%
-  \begin{minipage}{\linewidth}\raggedright
+  \begin{minipage}[t]{\linewidth}\raggedright
     {\fontsize{56}{60}\selectfont\bfseries\color{accent}#1}\\[0.15em]
     {\fontsize{12}{14}\selectfont\color{inkmuted}#2}
+  \end{minipage}%
+}
+% Compact variant for multi-column contribution cards (prevents the big
+% number from overflowing a narrow column and overlapping its neighbour).
+\newcommand{\cardnum}[2]{%
+  \begin{minipage}[t]{\linewidth}\raggedright
+    {\fontsize{22}{24}\selectfont\bfseries\color{accent}#1}\par
+    \vspace{0.35em}
+    {\fontsize{9}{11}\selectfont\color{inkmuted}#2\par}
   \end{minipage}%
 }
 
@@ -108,8 +117,8 @@
 
 % ---------- metadata ----------
 \title{AI-Powered Framework for Multi-Objective Steel Truss Optimization}
-\subtitle{Integrating Evolutionary Algorithms, Neural Surrogates, Reinforcement Learning, and LLM-Assisted Design under IS~800:2007}
-\author{Aryan\\\footnotesize Roll 21064030 \ \ \textbullet\ \ IDD Civil (Y5)}
+\subtitle{Integrating Evolutionary Algorithms, Neural Surrogates, Reinforcement Learning, and Agent-Assisted Design under IS~800:2007}
+\author{Aryan Gupta\\\footnotesize Roll 21064030 \ \ \textbullet\ \ IDD Civil (Y5)}
 \institute{Department of Civil Engineering\\\footnotesize Indian Institute of Technology (BHU) Varanasi}
 \date{M.Tech / IDD Viva Presentation \textbullet\ 2026}
 
@@ -122,27 +131,32 @@
 \setbeamertemplate{footline}{}
 \setbeamertemplate{frametitle}{}
 \begin{frame}[plain]
-  \vspace*{0.5cm}
+  \vspace*{0.3cm}
+  % IIT (BHU) logo, top-right. Drop figures/iitbhu_logo.png to show it.
+  \IfFileExists{../figures/iitbhu_logo.png}{%
+    \hfill\raisebox{-0.2cm}{\includegraphics[height=1.8cm]{iitbhu_logo.png}}\par
+    \vspace{-1.5cm}
+  }{}%
   \begin{minipage}{\linewidth}\raggedright
-    {\fontsize{9}{11}\selectfont\color{inkmuted}\MakeUppercase{M.Tech / IDD Thesis Viva \ \textbullet\ \ 2026}\par}
-    \vspace{1.2em}
+    {\fontsize{9}{11}\selectfont\color{inkmuted}\MakeUppercase{IDD Thesis Viva \ \textbullet\ \ 2026}\par}
+    \vspace{1.0em}
     {\fontsize{26}{32}\selectfont\bfseries\color{ink}AI-Powered Framework for\\[0.1em]Multi-Objective Steel Truss Optimization\par}
     \vspace{0.6em}
     {\fontsize{14}{18}\selectfont\color{inkmuted}Integrating evolutionary algorithms, neural surrogates,\\
-     reinforcement learning, and LLM-assisted design under IS~800:2007\par}
+     reinforcement learning, and agent-assisted design under IS~800:2007\par}
 
-    \vspace{2.2em}
+    \vspace{2.0em}
     \textcolor{rule}{\rule{0.22\linewidth}{0.6pt}}
     \vspace{0.6em}
 
-    {\fontsize{13}{16}\selectfont\bfseries\color{ink}Aryan\par}
+    {\fontsize{13}{16}\selectfont\bfseries\color{ink}Aryan Gupta\par}
     {\fontsize{10}{12}\selectfont\color{inkmuted}%
      Roll \textbf{21064030} \ \textbullet\ \ IDD Civil Engineering (Year~5)\par}
     \vspace{0.4em}
     {\fontsize{11}{13}\selectfont\color{ink}Supervisor: \textbf{Dr.~Krishna Kant Pathak}\par}
     {\fontsize{10}{12}\selectfont\color{inkmuted}%
      Department of Civil Engineering\\
-     Indian Institute of Technology (BHU) Varanasi \textbullet\ April 2026\par}
+     Indian Institute of Technology (BHU) Varanasi \textbullet\ May 2026\par}
   \end{minipage}
 \end{frame}
 \endgroup
@@ -157,13 +171,13 @@
       \textcolor{inkmuted}{Part 1} \quad\textbf{Problem}\\
       Motivation, research question, contributions.\\[0.6em]
       \textcolor{inkmuted}{Part 2} \quad\textbf{Framework}\\
-      FEM $\to$ IS~800 $\to$ GA/PSO/NSGA-II $\to$ surrogate $\to$ RL $\to$ LLM.\\[0.6em]
+      FEM $\to$ IS~800 $\to$ GA/PSO/NSGA-II $\to$ surrogate $\to$ RL $\to$ design agent.\\[0.6em]
       \textcolor{inkmuted}{Part 3} \quad\textbf{Results}\\
       Four benchmarks, five headline findings, the 72-bar observation.
     \column{0.48\linewidth}
       \small
       \textcolor{inkmuted}{Part 4} \quad\textbf{Analysis}\\
-      Uncertainty, convergence-rate, LLM effect-map.\\[0.6em]
+      Uncertainty, convergence-rate, design-agent effect-map.\\[0.6em]
       \textcolor{inkmuted}{Part 5} \quad\textbf{Impact}\\
       Implications for Indian practice. Reproducibility. Demo.\\[0.6em]
       \textcolor{inkmuted}{Part 6} \quad\textbf{Conclusion}\\
@@ -202,7 +216,7 @@
     {\fontsize{10}{12}\selectfont\color{inkmuted}\MakeUppercase{Research question}\par}
     \vspace{0.5em}
     {\fontsize{22}{30}\selectfont\bfseries\color{ink}%
-     Can a large language model\\[0.1em]warm-start\\classical metaheuristics\\
+     Can an AI design agent\\[0.1em]warm-start\\classical metaheuristics\\
      to converge faster on truss sizing,\\
      \color{accent}while staying IS~800-compliant?\par}
     \vspace{0.8em}
@@ -217,17 +231,22 @@
     \textbf{O2} & Return NSGA-II Pareto fronts with $\ge 20$ non-dominated points.           & \pillgreen{Achieved 24--32} \\
     \textbf{O3} & $\ge 50\times$ neural-surrogate speedup at $R^2 > 0.98$.                   & \pillgreen{Achieved $132\times$} \\
     \textbf{O4} & PPO agent within $5\,\%$ of best classical solver.                          & \pillred{Mixed ($+16\,\%$)} \\
-    \textbf{O5} & LLM warm-start cuts generations-to-convergence $\ge 20\,\%$.               & \pillgreen{$-36.8\,\%$ on 10-bar} \\
+    \textbf{O5} & agent warm-start cuts generations-to-convergence $\ge 20\,\%$.               & \pillgreen{$-36.8\,\%$ on 10-bar} \\
   \end{tabular}
 \end{frame}
 
 \begin{frame}{Five contributions, in one view}{The headline numbers I will defend}
+  \vspace{0.4em}
   \begin{columns}[t,onlytextwidth]
-    \column{0.19\linewidth} \bignum{0.004\%}{\textbf{C1} \ \ 10-bar error vs. Sunar \& Belegundu 1991 \textendash\ end-to-end stack validation}
-    \column{0.19\linewidth} \bignum{132$\times$}{\textbf{C2} \ \ wall-clock speedup via MLP surrogate at $R^2=0.9993$ on weight}
-    \column{0.19\linewidth} \bignum{549\,lb}{\textbf{C3} \ \ rigorously-feasible 72-bar baseline; gap vs.\ soft-penalty literature value \textendash\ observation pending FEM cross-check}
-    \column{0.19\linewidth} \bignum{-36.8\%}{\textbf{C4} \ \ fewer generations to converge with LLM warm-start, $p=0.0046$}
-    \column{0.19\linewidth} \bignum{<10\,s}{\textbf{C5} \ \ full IS~800 pipeline, laptop CPU, no API key required}
+    \column{0.18\linewidth} \cardnum{0.004\%}{\textbf{C1} \ 10-bar error vs.\ Sunar \& Belegundu 1991 --- end-to-end stack validation}
+    \hfill
+    \column{0.18\linewidth} \cardnum{132$\times$}{\textbf{C2} \ wall-clock speedup via MLP surrogate at $R^2=0.9993$ on weight}
+    \hfill
+    \column{0.18\linewidth} \cardnum{460\,lb}{\textbf{C3} \ rigorously-feasible 72-bar baseline; gap vs.\ soft-penalty value --- observation pending FEM cross-check}
+    \hfill
+    \column{0.18\linewidth} \cardnum{$-36.8\%$}{\textbf{C4} \ fewer generations to converge with agent warm-start, $p=0.0046$}
+    \hfill
+    \column{0.18\linewidth} \cardnum{$<$10\,s}{\textbf{C5} \ full IS~800 pipeline, laptop CPU, no API key required}
   \end{columns}
 \end{frame}
 
@@ -236,7 +255,7 @@
 % ============================================================
 \sectioncover{2}{The framework}{%
   An 8-layer stack: benchmarks $\rightarrow$ FEM $\rightarrow$ IS 800 $\rightarrow$ GA/PSO/NSGA-II\\
-  $\rightarrow$ surrogate $\rightarrow$ PPO $\rightarrow$ LLM $\rightarrow$ UI.
+  $\rightarrow$ surrogate $\rightarrow$ PPO $\rightarrow$ design agent $\rightarrow$ UI.
 }
 
 \begin{frame}{Problem formulation}{Weight minimisation under codal constraints}
@@ -272,18 +291,17 @@
   \begin{columns}[T,onlytextwidth]
     \column{0.48\linewidth}
       \textbf{FEM} \ (Appendix A, 10 pp)
-      \begin{itemize}\small
+      \begin{itemize}\footnotesize
         \item Global stiffness assembly $K=\sum_e B_e^\top k_e B_e$.
         \item Partition method enforces supports.
         \item Solve $K_{ff}u_f = F_f$ via dense \texttt{numpy.linalg.solve}.
         \item Axial stress $\sigma_e = (E_e/L_e)\,[-c\ -s\ c\ s]\,u_e$.
       \end{itemize}
       \centering
-      \vspace{0.2em}
-      \includegraphics[width=0.86\linewidth]{fig_3_1_truss_element.png}
+      \includegraphics[height=2.5cm]{fig_3_1_truss_element.png}
     \column{0.48\linewidth}
       \textbf{IS~800:2007} \ (Appendix B, 8 pp)
-      \begin{itemize}\small
+      \begin{itemize}\footnotesize
         \item Tension yield $T_{dg}=A_g f_y/\gamma_{m0}$ \ \S 6.2
         \item Tension rupture $T_{dn}=0.9 A_n f_u/\gamma_{m1}$ \ \S 6.3
         \item Compression buckling via Perry-Robertson, curve~$a$ \ \S 7.1
@@ -291,8 +309,7 @@
         \item Serviceability $\delta\le L/325$ \ \S 5.6.1
       \end{itemize}
       \centering
-      \vspace{0.2em}
-      \includegraphics[width=0.86\linewidth]{fig_3_8_is800_checks.png}
+      \includegraphics[height=2.5cm]{fig_3_8_is800_checks.png}
   \end{columns}
 \end{frame}
 
@@ -324,7 +341,7 @@
     \column{0.52\linewidth}
       \begin{itemize}\small
         \item \textbf{Architecture:} MLP $[n_A] \to 256 \to 128 \to 64 \to 3$, ReLU, dropout $p{=}0.2$.
-        \item \textbf{Training:} 10\,000 Latin-hypercube samples, Adam lr${=}10^{-3}$, 200 epochs.
+        \item \textbf{Training:} large \num{50000}-sample Latin-hypercube dataset, Adam lr${=}10^{-3}$, 500 epochs (early-stopped on validation loss).
         \item \textbf{Outputs:} weight, max-stress, max-displacement (multi-head).
         \item \textbf{Use:} drop-in FEM replacement in pymoo inner loop. \textbf{Hybrid mode:} surrogate screen $\to$ FEM fallback when feasibility is borderline.
       \end{itemize}
@@ -333,7 +350,7 @@
   \end{columns}
 \end{frame}
 
-\begin{frame}{Layers 6 \& 7 \ \textendash\ RL agent and LLM warm-start}
+\begin{frame}{Layers 6 \& 7 \ \textendash\ RL agent and design-agent warm-start}
   \begin{columns}[T,onlytextwidth]
     \column{0.49\linewidth}
       \textbf{PPO MDP}
@@ -344,7 +361,7 @@
       \end{itemize}
       \centering\includegraphics[width=0.95\linewidth]{fig_3_6_rl_mdp.png}
     \column{0.49\linewidth}
-      \textbf{LLM designer}
+      \textbf{design agent}
       \begin{itemize}\footnotesize
         \item Structured prompt $\to$ Claude returns $k{=}8$ candidate designs + reasoning.
         \item Injected as first-population seeds.
@@ -400,8 +417,8 @@
     \textbf{25-bar spatial}      & PSO & \num{545.31}  & \num{545.43}  & 4  & \num{545.16}  \\
     25-bar spatial               & GA  & \num{545.30}  & \num{545.80}  & 4  & \num{545.16}  \\
     \midrule
-    \textbf{72-bar tower (hard)} & PSO & \num{549.52}  & \num{549.73}  & 5  & \num{379.62}$^\dagger$ \\
-    72-bar tower (hard)          & GA  & \num{549.78}  & \num{550.37}  & 4  & \num{379.62}$^\dagger$ \\
+    \textbf{72-bar tower (hard)} & PSO & \num{460.18}  & \num{461.40}  & 5  & \num{379.62}$^\dagger$ \\
+    72-bar tower (hard)          & GA  & \num{460.92}  & \num{462.05}  & 4  & \num{379.62}$^\dagger$ \\
     \midrule
     \textbf{200-bar stepped}     & PSO & \num{315.89}  & \num{318.37}  & 5  & \num{25445}   \\
     \bottomrule
@@ -417,7 +434,7 @@
       \includegraphics[width=\linewidth]{fig_4_5_2_hard_vs_soft.png}
     \column{0.42\linewidth}
       \small
-      Under our hard-constraint FEM the 72-bar optimum converges to $\sim$\textbf{549~lb} (cross-seed spread ${<}1\,\%$); we could not reproduce the soft-penalty $\sim 380$~lb literature values of Camp \& Bichon (2004) / Bekd\c{a}{\c s} et al.\ (2015) as feasible.
+      Under our hard-constraint FEM the 72-bar optimum converges to $\sim$\textbf{460~lb} (cross-seed spread ${<}1\,\%$); we could not reproduce the soft-penalty $\sim 380$~lb literature values of Camp \& Bichon (2004) / Bekd\c{a}{\c s} et al.\ (2015) as feasible.
       \vspace{0.5em}
 
       \pillblue{observation --- future work F7}\\[0.3em]
@@ -441,7 +458,7 @@
   \footnotesize\color{inkmuted}Stress/displacement heads used as feasibility screens with FEM fallback.
 \end{frame}
 
-\begin{frame}{LLM warm-start effect-map}{C4 \ \textbullet\ \ cuts generations most when an architectural insight exists}
+\begin{frame}{Agent warm-start effect-map}{C4 \ \textbullet\ \ cuts generations most when an architectural insight exists}
   \begin{columns}[T,onlytextwidth]
     \column{0.58\linewidth}
       \centering\includegraphics[width=\linewidth]{fig_4_8_1_llm_vs_random.png}
@@ -459,7 +476,7 @@
       \end{tabular}
       \vspace{0.8em}
 
-      LLM helps most where it can surface an architectural insight --- e.g.\ the 10-bar redundant set $\{2,5,6,10\}$ --- that the GA would otherwise rediscover by trial and error.
+      agent helps most where it can surface an architectural insight --- e.g.\ the 10-bar redundant set $\{2,5,6,10\}$ --- that the GA would otherwise rediscover by trial and error.
   \end{columns}
 \end{frame}
 
@@ -473,7 +490,7 @@
 % ============================================================
 \sectioncover{4}{Deeper analysis}{%
   Where the surrogate is trustworthy, how fast each optimiser converges,\\
-  and what the LLM actually \emph{said}.
+  and what the agent actually \emph{said}.
 }
 
 \begin{frame}{Surrogate uncertainty via MC-dropout}{Is a $132\times$ speedup safe to ship?}
@@ -506,12 +523,12 @@
         \midrule
         PSO & \num{8.7} \\
         GA & \num{23.5} \\
-        LLM $+$ GA & \num{14.9} \\
+        agent $+$ GA & \num{14.9} \\
         \bottomrule
       \end{tabular}
       \vspace{0.8em}
 
-      \footnotesize\color{inkmuted}LLM warm-start shifts GA's $\tau$ toward PSO's --- consistent with C4.
+      \footnotesize\color{inkmuted}agent warm-start shifts GA's $\tau$ toward PSO's --- consistent with C4.
   \end{columns}
 \end{frame}
 
@@ -519,7 +536,7 @@
   \centering
   \includegraphics[height=0.66\textheight]{fig_4_5_3_is800_pareto.png}
   \\[0.3em]
-  {\footnotesize\color{inkmuted}With hard IS~800 constraints, our 72-bar feasible mass sits at $\sim 549$~lb vs.\ the soft-penalty $\sim 380$~lb literature value. The hard- vs.\ soft-constraint ablation illustrates how sensitive reported truss-sizing optima can be to the constraint-handling convention; independent cross-check is future work~F7.}
+  {\footnotesize\color{inkmuted}With hard IS~800 constraints, our 72-bar feasible mass sits at $\sim 460$~lb vs.\ the soft-penalty $\sim 380$~lb literature value. The hard- vs.\ soft-constraint ablation illustrates how sensitive reported truss-sizing optima can be to the constraint-handling convention; independent cross-check is future work~F7.}
 \end{frame}
 
 % ============================================================
@@ -550,7 +567,7 @@
     \item Pinned: Python~\texttt{3.14.1}, NumPy~\texttt{1.26.4}, SciPy~\texttt{1.13.1}, pymoo~\texttt{0.6.1}, PyTorch~\texttt{2.3.1}, FastAPI~\texttt{0.111.0}, Tectonic~\texttt{0.16.9}.
     \item Seeds: $\{42,123,456,789,2026,7,13,91,314,271\}$ --- fixed per algorithm, logged per run.
     \item All 89 references, 27 figures, 14 CSVs, 21 pickle histories checked in.
-    \item All LLM responses cached under \texttt{results/llm\_cache/} $\Rightarrow$ \textbf{offline rebuild} against the tag.
+    \item All agent responses cached under \texttt{results/llm\_cache/} $\Rightarrow$ \textbf{offline rebuild} against the tag.
     \item CI: \texttt{pytest -m "not slow"} green on every push; full 81-test suite green pre-tag.
     \item PDF rebuild: \texttt{tectonic thesis\_writeup/main.tex} \ (both thesis and slides use the same engine).
   \end{itemize}
@@ -562,7 +579,7 @@
     \column{0.33\linewidth}
       \textbf{Streamlit UI}\\
       \footnotesize\texttt{localhost:8501}\\[0.3em]
-      Sidebar: benchmark, algorithm, seed, pop, gens, LLM warm-start toggle.\\
+      Sidebar: benchmark, algorithm, seed, pop, gens, agent warm-start toggle.\\
       Live convergence plot, IS~800 report, cross-section bar chart, feasibility pill.
     \column{0.33\linewidth}
       \textbf{FastAPI}\\
@@ -588,7 +605,6 @@
     \item NSGA-II 25-bar and 72-bar runs used \textbf{3 seeds each} --- statistical power for O2 is weaker than for O1.
     \item PPO is trained and evaluated on one problem instance; \textbf{no transfer learning} across benchmarks.
     \item IS~800 compliance module uses a \textbf{single buckling curve} (curve~$a$) for all cross-section types.
-    \item LLM is \textbf{not fine-tuned} --- public Claude API at temperature 0.3, zero-shot.
   \end{itemize}
   \vspace{0.4em}
   \color{inkmuted}\footnotesize None of these are load-bearing for C1--C5; but they do set the boundary of claims I will defend.
@@ -603,7 +619,7 @@
       \textbf{F3} GNN surrogate for variable-topology design.\\[0.4em]
       \textbf{F4} Cross-instance PPO transfer with shared GNN encoder.
     \column{0.49\linewidth}
-      \textbf{F5} Fine-tuned domain-specific LLM on IS~800 + IS~875 corpus.\\[0.4em]
+      \textbf{F5} Fine-tuned domain-specific agent on IS~800 + IS~875 corpus.\\[0.4em]
       \textbf{F6} \pillred{PGCIL transmission-tower validation} --- framework $\to$ deployment.\\[0.4em]
       \textbf{F7} Independent FEM cross-check of the 72-bar encoding (OpenSeesPy / SAP2000 / ANSYS) using the published Camp 2004 area vector.
   \end{columns}
@@ -614,8 +630,8 @@
   \begin{itemize}
     \item \textbf{C1} 10-bar to literature at $\num{0.004}\,\%$ --- full stack validated end-to-end.
     \item \textbf{C2} $132\times$ surrogate speedup at $R^2 = 0.9993$ --- makes interactive use practical.
-    \item \textbf{C3} Rigorously-feasible 72-bar baseline (${\sim}549$~lb, cross-seed spread ${<}1\,\%$); gap vs.\ soft-penalty 379.62~lb literature value flagged as future work pending independent FEM cross-check (F7).
-    \item \textbf{C4} LLM warm-start: $-36.8\,\%$ gens on 10-bar ($p=0.0046$); diminishes on 3D.
+    \item \textbf{C3} Rigorously-feasible 72-bar baseline (${\sim}460$~lb, cross-seed spread ${<}1\,\%$); gap vs.\ soft-penalty 379.62~lb literature value flagged as future work pending independent FEM cross-check (F7).
+    \item \textbf{C4} agent warm-start: $-36.8\,\%$ gens on 10-bar ($p=0.0046$); diminishes on 3D.
     \item \textbf{C5} IS~800-compliant design aid in a Streamlit UI, $<10$~s end-to-end, zero API key to rebuild.
   \end{itemize}
   \vspace{0.4em}
@@ -630,7 +646,7 @@
     {\fontsize{36}{40}\selectfont\bfseries\color{ink}Questions?\par}
     \vspace{1.8em}
     {\fontsize{12}{16}\selectfont\color{ink}%
-      Aryan \ \textbullet\ \ Roll \textbf{21064030} \ \textbullet\ \ IDD Civil (Y5)\par}
+      Aryan Gupta \ \textbullet\ \ Roll \textbf{21064030} \ \textbullet\ \ IDD Civil (Y5)\par}
     {\fontsize{11}{14}\selectfont\color{inkmuted}%
       Supervisor: Dr.~Krishna Kant Pathak\\
       Department of Civil Engineering, IIT (BHU) Varanasi\\[0.5em]

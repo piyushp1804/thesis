@@ -31,7 +31,7 @@ All paths below are relative to the repository root:
     run_batch.py             multi-seed GA/PSO/NSGA-II runner
     run_single.py            one-shot solver for debugging
     train_surrogate.py       dataset gen + MLP training
-    run_llm_warmstart.py     LLM designer driver
+    run_llm_warmstart.py     design agent driver
     run_mc_dropout_analysis.py     Day-1 Appendix 4.14
     run_llm_cache_reanalysis.py    Day-1 Appendix 4.15
     run_convergence_rate_fits.py   Day-1 Appendix 4.16
@@ -73,7 +73,7 @@ The complete \texttt{requirements.txt} is reproduced below:
   \item \textbf{Phase 2 surrogate}: \texttt{torch==2.11.0}.
   \item \textbf{Phase 3 RL}: \texttt{stable-baselines3==2.8.0},
         \texttt{gymnasium==1.2.3}.
-  \item \textbf{Phase 4 LLM}: \texttt{anthropic==0.96.0},
+  \item \textbf{Phase 4 agent}: \texttt{anthropic==0.96.0},
         \texttt{python-dotenv==1.2.2}.
   \item \textbf{Phase 5 app}: \texttt{streamlit==1.56.0},
         \texttt{fastapi==0.136.0}, \texttt{uvicorn==0.46.0},
@@ -91,7 +91,7 @@ From a fresh clone, reproduction starts with:
   pip install --upgrade pip
   pip install -r requirements.txt
 
-  # (optional) populate your Anthropic API key for LLM re-runs:
+  # (optional) populate your Anthropic API key for agent re-runs:
   echo "ANTHROPIC_API_KEY=sk-..." > .env
 
   # smoke-test the environment:
@@ -105,7 +105,7 @@ excluded from CI and from the 30-second smoke test.
 \label{app:repro:seeds}
 
 Every stochastic run (GA, PSO, NSGA-II, LHS dataset generation,
-LLM sampling) uses a caller-supplied integer seed. Across
+agent sampling) uses a caller-supplied integer seed. Across
 \cref{chap:results} the fixed pool of 10 seeds is:
 \begin{equation}
   \mathcal{S}_{10}
@@ -178,7 +178,7 @@ pickle, retries each failure up to three times, and logs to
 \texttt{logs/200bar\_overnight.log}. Wall-clock: $\sim\!\SI{8}{h}$
 on Apple~M1 for the complete matrix.
 
-\subsection{Ch 4.6 --- LLM warm-start}
+\subsection{Ch 4.6 --- agent warm-start}
 \begin{verbatim}
   python scripts/run_llm_warmstart.py --benchmark 10bar --n-queries 30
   python scripts/run_llm_warmstart.py --benchmark 25bar --n-queries 30
@@ -187,7 +187,7 @@ on Apple~M1 for the complete matrix.
 Each command calls the Anthropic API 30 times and writes its
 responses + parsed area vectors to
 \texttt{results/llm\_cache/\{10,25,72\}bar\_*.json}. These
-cache files are committed to the repository so the LLM ablation
+cache files are committed to the repository so the agent ablation
 in \cref{sec:results:llm} can be reproduced
 \emph{without} an API key. To force a fresh API call, delete the
 corresponding cache file and rerun.
@@ -212,7 +212,7 @@ All committed artefacts are listed in \cref{tab:artefacts};
 \begin{table}[h]
   \centering
   \caption{Artefact manifest. Figures are regenerated on demand
-    (git-ignored); CSV summaries, LLM cache JSONs, and run
+    (git-ignored); CSV summaries, agent cache JSONs, and run
     pickles are committed so numerical results can be recomputed
     without rerunning optimisation batches.}
   \label{tab:artefacts}
@@ -285,7 +285,7 @@ release tag.
     endpoint contracts (updated Phase 9 to add
     \texttt{/benchmarks/200bar}).
   \item \texttt{tests/test\_llm\_*.py}: 11 tests --- cache I/O
-    shape checks, LLM warm-start determinism given cache.
+    shape checks, agent warm-start determinism given cache.
 \end{itemize}
 Every result in \cref{chap:results} can be traced to the
 deterministic output of at least one of these tests, which

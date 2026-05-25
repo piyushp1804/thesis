@@ -23,7 +23,17 @@
 \usepackage{algpseudocode}
 \usepackage{multirow}
 
-\usepackage[hidelinks,colorlinks=false,bookmarks=true]{hyperref}
+% Red boxed cross-references (equation / figure / table / section links),
+% matching the reference-thesis style. Boxes are screen annotations and do
+% not appear when printed. To remove them entirely, swap this whole block
+% for: \usepackage[hidelinks,colorlinks=false,bookmarks=true]{hyperref}
+\usepackage[colorlinks=false,bookmarks=true]{hyperref}
+\hypersetup{
+  pdfborder={0 0 1},               % draw a 1pt border around links
+  linkbordercolor={1 0 0},         % internal links (\ref/\cref/\eqref) -> red
+  citebordercolor={1 0 0},         % citations -> red
+  urlbordercolor={1 0 0}           % URLs -> red
+}
 \usepackage[capitalise,noabbrev]{cleveref}
 
 \usepackage[backend=bibtex,style=ieee,sorting=none]{biblatex}
@@ -31,9 +41,14 @@
 
 \newcommand{\thesistitle}{An AI-Powered Framework for Multi-Objective Steel Truss
 Optimization: Integrating Evolutionary Algorithms, Neural Surrogate Models,
-and LLM-Assisted Design}
-\newcommand{\thesisauthor}{Aryan}
+and Agent-Assisted Design}
+\newcommand{\thesisauthor}{Aryan Gupta}
+\newcommand{\thesisrollno}{21064030}
 \newcommand{\thesisguide}{Dr.~Krishna Kant Pathak}
 \newcommand{\thesisdepartment}{Department of Civil Engineering}
 \newcommand{\thesisinstitute}{Indian Institute of Technology (BHU), Varanasi}
-\newcommand{\thesisyear}{2026}
+\newcommand{\thesisinstitutefull}{INDIAN INSTITUTE OF TECHNOLOGY\\(BANARAS HINDU UNIVERSITY)\\VARANASI -- 221\,005}
+\newcommand{\thesisdegree}{Integrated Dual Degree (IDD)}
+\newcommand{\thesisdiscipline}{Civil and Structural Engineering}
+\newcommand{\thesisperiod}{July 2025 to May 2026}
+\newcommand{\thesisyear}{May 2026}

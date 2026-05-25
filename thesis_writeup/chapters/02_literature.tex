@@ -247,10 +247,10 @@ design variables, reward shaping by a weighted sum of objective
 improvement and constraint violation --- are followed closely by
 this thesis.
 
-\section{LLM-Assisted Engineering Design}
+\section{Agent-Assisted Engineering Design}
 \label{sec:lit:llm}
 
-The use of large language models as \emph{designers} --- asking a
+The use of AI design agents as \emph{designers} --- asking a
 model to propose engineering artefacts rather than describe them
 --- is a research area less than three years old at the time of
 this writing, but it is moving rapidly. Wei et
@@ -258,34 +258,34 @@ al.~\cite{wei2022cot} established that chain-of-thought prompting
 --- asking the model to reason step by step before committing to
 an answer --- improves performance on compositional-reasoning
 tasks substantially. Chain-of-thought is now standard practice for
-any LLM-mediated design task, including the truss-sizing prompt
+any agent-mediated design task, including the truss-sizing prompt
 used in Chapter~\ref{sec:method:llm}.
 
 Two papers are direct precedents for the work in this thesis.
-Geng et al.~\cite{geng2024} integrated a large language model with
-the OpenSeesPy structural-analysis package, letting the LLM
+Geng et al.~\cite{geng2024} integrated an AI design agent with
+the OpenSeesPy structural-analysis package, letting the agent
 generate complete Python scripts for linear and non-linear
-structural problems; they found the LLM could produce working
+structural problems; they found the agent could produce working
 code for canonical problems but required human supervision at the
 parameter level. Makatura and colleagues~\cite{makatura2024}
-surveyed the broader question of how large language models can
+surveyed the broader question of how AI design agents can
 assist humans in design and manufacturing, and concluded that
-the most productive deployment pattern is \emph{the LLM as
+the most productive deployment pattern is \emph{the agent as
 co-designer} --- not replacing the human engineer, and not
 replacing the optimiser, but providing warm-start designs,
 natural-language interfaces, and documentation support that shorten
 the human-in-the-loop cycle.
 
-The LLM layer in this thesis is a realisation of the Makatura
+The agent layer in this thesis is a realisation of the Makatura
 co-designer pattern specialised to the warm-start use case.
 Anthropic's Claude API~\cite{anthropic-docs} is queried with a
 structured prompt that describes the benchmark geometry, loading,
 and design bounds; the model returns a JSON design vector that is
 injected as one member of the initial GA population. The novelty
-is not in the LLM itself --- Claude is used via the public API
-without fine-tuning --- but in the demonstration that LLM-
+is not in the agent itself --- Claude is used via the public API
+without fine-tuning --- but in the demonstration that agent-
 generated designs are quantitatively useful warm-starts. On the
-10-bar benchmark with \num{40} random seeds, LLM-seeded GA runs
+10-bar benchmark with \num{40} random seeds, agent-seeded GA runs
 converged to the literature optimum in \num{36.8}~\% fewer
 generations than random-seeded runs, with paired-Wilcoxon
 $p = \num{0.0046}$. This is the principal empirical contribution
@@ -349,9 +349,9 @@ literature and each a clear application to truss sizing. The gap
 the present thesis fills is \emph{integrative}: no published work
 combines classical evolutionary optimisation (GA, PSO, NSGA-II), a
 neural surrogate accelerator, a reinforcement-learning policy, an
-LLM warm-start designer, and Indian-code (IS~800:2007) compliance
+agent warm-start designer, and Indian-code (IS~800:2007) compliance
 checking in a single open-source reproducible framework. The
-closest prior work --- Geng et al.~\cite{geng2024}'s LLM +
+closest prior work --- Geng et al.~\cite{geng2024}'s agent +
 OpenSeesPy integration and Sun et al.~\cite{sun2023}'s DNN + GA
 coupling --- each integrate two of the five layers. The thesis's
 contribution is to wire all five together, validate each layer

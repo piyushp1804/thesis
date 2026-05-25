@@ -39,7 +39,7 @@ is written to an \texttt{OptimizationResult} pickle keyed by
 \texttt{\{benchmark\}\_\{algorithm\}\_seed\{SEED\}.pkl}, and the
 results folder further contains a \texttt{scoreboard.csv} that
 aggregates best, mean, and standard deviation per
-(benchmark~$\times$~algorithm) across all available seeds. LLM
+(benchmark~$\times$~algorithm) across all available seeds. agent
 API responses are hashed by prompt content and cached under
 \texttt{results/llm\_cache/} so that any reader can replay a
 warm-started run offline without re-billing the Anthropic API.
@@ -57,7 +57,7 @@ through the IS~800:2007 compliance module before being written to
   \caption{End-to-end experimental pipeline. Benchmark $\to$
     optimiser $\to$ evaluator (FEM or surrogate) $\to$ IS~800
     compliance check $\to$ \texttt{OptimizationResult} pickle +
-    CSV summary. The dashed sub-paths (LLM designer, PPO agent)
+    CSV summary. The dashed sub-paths (design agent, PPO agent)
     short-circuit the optimiser loop with a one-shot proposal.}
   \label{fig:results:pipeline}
 \end{figure}
@@ -114,7 +114,7 @@ Blank~\&~Deb~\cite{blank2020pymoo}'s recommended defaults.
              & clip $\epsilon$                 & 0.2  \\
              & lr                              & $\num{3e-4}$ \\
     \midrule
-    LLM      & model                           & Claude Opus 4.7 \\
+    agent      & model                           & Claude Opus 4.7 \\
              & temperature                     & 0.3 \\
              & max tokens                      & 1024 \\
              & response format                 & structured JSON \\
@@ -135,7 +135,7 @@ For each (benchmark, algorithm) cell we report:
   \item \textbf{Convergence generation}: the first generation at
         which the best feasible weight comes within $\num{1}\,\%$
         of the per-run final value (used only for comparisons of
-        optimiser progress, e.g.\ the LLM warm-start study of
+        optimiser progress, e.g.\ the agent warm-start study of
         \S\ref{sec:results:llm}).
   \item \textbf{Wall-clock per evaluation}: mean seconds per
         \texttt{evaluate(x)} call of the chosen evaluator,
@@ -150,7 +150,7 @@ For each (benchmark, algorithm) cell we report:
 
 Cross-seed variability is reported as mean $\pm$ standard
 deviation across the available seeds per cell. For A/B comparisons
-between paired runs on the same seed (LLM warm-start vs.\ random
+between paired runs on the same seed (agent warm-start vs.\ random
 initialisation, surrogate vs.\ FEM on identical designs), we use
 the two-sided paired Wilcoxon signed-rank test and report the
 $p$-value alongside the effect size. With $n$ seeds the test is
@@ -719,12 +719,12 @@ refine through a full optimisation run if desired.
   \end{tabular}
 \end{table}
 
-\section{LLM Warm-Start Study}
+\section{Agent Warm-Start Study}
 \label{sec:results:llm}
 
-We evaluate a large-language-model (LLM) as a semantic initialiser for
+We evaluate a large-language-model (agent) as a semantic initialiser for
 the genetic algorithm. Rather than replacing any component of the
-optimisation loop, the LLM is asked — via the Anthropic Claude API~%
+optimisation loop, the agent is asked — via the Anthropic Claude API~%
 \cite{anthropic-docs} — to propose a single initial design vector from
 a natural-language description of the benchmark geometry, loads, and
 constraints; this vector seeds the first \num{10}\,\% of the GA
@@ -740,10 +740,10 @@ areas within \num{10}\,\% of Sunar's published optimum with confidence
 a \num{36.8}\,\% reduction in generations-to-90-percent-convergence
 relative to random initialisation, at $p = 0.0046$.
 
-% TABLE LLM RESULTS — populated after Phase 7 LLM runs on 25/72-bar.
+% TABLE agent RESULTS — populated after Phase 7 agent runs on 25/72-bar.
 \begin{table}[htbp]
   \centering
-  \caption{LLM warm-start vs random-init GA. Mean generations-to-
+  \caption{agent warm-start vs random-init GA. Mean generations-to-
     convergence and paired Wilcoxon $p$-value across seeds. 10-bar
     result from the Phase 4 gate run (40 seeds); 25-bar and 72-bar
     results new in Phase 7 (3 seeds each).}
@@ -751,7 +751,7 @@ relative to random initialisation, at $p = 0.0046$.
   \sisetup{table-format=3.1}
   \begin{tabular}{lrSSSS}
     \toprule
-    Benchmark & Seeds & {$\bar{g}$ random} & {$\bar{g}$ LLM} &
+    Benchmark & Seeds & {$\bar{g}$ random} & {$\bar{g}$ agent} &
     {\% reduction} & {$p$ (Wilcoxon)} \\
     \midrule
     10-bar  & 40 & 197.2        & 124.7        &  36.8        & 0.0046 \\
@@ -762,8 +762,8 @@ relative to random initialisation, at $p = 0.0046$.
 \end{table}
 
 On 25-bar, Claude's first-call proposal achieves a 76.6\% reduction
-in generations-to-convergence (82.7 random $\to$ 19.3 LLM-warmstart)
-and also converges to a \emph{better} minimum (545.7--547.7~lb LLM
+in generations-to-convergence (82.7 random $\to$ 19.3 agent-warmstart)
+and also converges to a \emph{better} minimum (545.7--547.7~lb agent
 vs.\ 547.6--575.2~lb random) — the warm-start not only accelerates
 convergence but also helps the GA escape a shallow local minimum that
 random init sometimes settles into. With only three seeds the
@@ -776,9 +776,9 @@ adaptively to $\num{1.02} \times \max(W_\text{final,random})
 = \num{564.5}$~lb because the literature-cited \num{379.62}~lb target
 is unreachable under rigorous constraint enforcement. Both arms
 converge briskly within the 200-generation budget — random in
-\num{46.2} generations on average, LLM-warmstarted in \num{48.4} —
-and the LLM-warmstart arm is in fact $\num{4.8}\,\%$ \emph{slower},
-with $p = 0.81$ (Wilcoxon, $n=5$): a flat null result. The LLM's
+\num{46.2} generations on average, agent-warmstarted in \num{48.4} —
+and the agent-warmstart arm is in fact $\num{4.8}\,\%$ \emph{slower},
+with $p = 0.81$ (Wilcoxon, $n=5$): a flat null result. The agent's
 suggested design (tapered from a base-heavy
 $\sim 1.8$~in\textsuperscript{2} down to
 $\sim 0.2$~in\textsuperscript{2} at the tip) is physically plausible
@@ -789,8 +789,8 @@ qualitative architectural insight that helped on 10-bar (eliminating
 the redundant members \{2,5,6,10\}) has no analogue on the
 fully-occupied 72-bar tower.
 
-This null result is itself the headline finding for the LLM-warmstart
-study: the technique helps the most on problems where the LLM can
+This null result is itself the headline finding for the agent-warmstart
+study: the technique helps the most on problems where the agent can
 identify a structural insight that the GA would otherwise have to
 discover through trial-and-error (10-bar redundant members,
 \num{36.8}\,\% reduction, $p < 0.005$), and progressively less on
@@ -806,7 +806,7 @@ setting \texttt{use\_cache=True} without an API key of their own.
   \includegraphics[width=0.95\textwidth]{fig_4_8_1_llm_vs_random.png}
   \caption{Per-seed generations-to-\num{1}~\% convergence on
     10-bar. Red circles: random initialisation. Purple squares:
-    LLM warm-start. Faint vertical lines pair the two arms on
+    agent warm-start. Faint vertical lines pair the two arms on
     identical seeds. The paired Wilcoxon $p$-value is
     \num{0.0046} across \num{40} seeds.}
   \label{fig:results:llm-vs-random}
@@ -1162,7 +1162,7 @@ surrogate forward pass is effectively constant-cost.
 
 Training costs, which are one-time rather than per-run, are
 summarised in \cref{tab:results:training-cost}: the surrogate
-training is $\num{112}$~s, PPO is $\num{1090}$~s, and the LLM
+training is $\num{112}$~s, PPO is $\num{1090}$~s, and the agent
 designer is essentially free because responses are cached after
 the first call per prompt. Amortised across even a handful of
 optimiser runs, every layer pays back its training overhead.
@@ -1179,7 +1179,7 @@ optimiser runs, every layer pays back its training overhead.
     Surrogate MLP      & LHS dataset (10k FEM calls) & 413  \\
                        & training (200 epochs)       & 112  \\
     PPO agent          & 200k env steps              & 1090 \\
-    LLM designer       & one API call (prompt cached) & 3   \\
+    design agent       & one API call (prompt cached) & 3   \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1298,19 +1298,19 @@ batch would invalidate the headline numbers. Doing so for a
 follow-on study is a four-line change to
 \texttt{src/algorithms/problem.py}.
 
-\section{LLM Cache Re-Analysis}
+\section{agent Cache Re-Analysis}
 \label{sec:results:llm_cache}
 
 \Cref{sec:results:llm} establishes that the Claude Opus~4.7
 warm-start moves the GA's convergence point earlier by a factor
 of roughly \num{2}$\times$ on 10-bar and produces a more modest
-gain on 25-bar and 72-bar. That result treats the LLM as a
+gain on 25-bar and 72-bar. That result treats the agent as a
 black box. In this section we open the cache --- three JSON files
 in \texttt{results/llm\_cache/} persisted by our prompt-hashing
 wrapper (\cref{sec:method:llm}) --- and ask three downstream
 questions that affect how future users should rely on it.
 
-\paragraph{Setup.} Each cached JSON records the LLM's raw text,
+\paragraph{Setup.} Each cached JSON records the agent's raw text,
 its parsed area vector, a self-reported \texttt{confidence}
 in $[0,1]$, and a free-form \texttt{reasoning} string (typically
 \num{40}--\num{60} words; see \cref{sec:method:llm} for the
@@ -1319,7 +1319,7 @@ corresponding benchmark by matching the length of the area
 vector (\num{10}, \num{8}, \num{16}) against the problem's
 design-variable count. We then pull per-seed realised
 \emph{speedup} --- the ratio of generations-to-convergence
-random~vs.~LLM-warm-start --- and realised \emph{final-weight
+random~vs.~agent-warm-start --- and realised \emph{final-weight
 gain} from \texttt{results/\{10,25,72\}bar\_llm\_warmstart.csv}.
 The driving script is
 \texttt{scripts/run\_llm\_cache\_reanalysis.py}.
@@ -1331,11 +1331,11 @@ Two of the three cache files report identical confidence
 \num{1.44}$\times$ (25-bar) to \num{2.01}$\times$ (10-bar). The
 10-bar case reports \num{0.82} confidence and a median realised
 weight gain of \num{-0.001}\,\% --- essentially zero, because
-both the random-start and LLM-start GA converge to the
+both the random-start and agent-start GA converge to the
 literature optimum \cite{sunar1991}. The 25-bar case reports the
 same \num{0.82} confidence but $\num{0.8}\,\%$ final-weight
 improvement, the largest of the three. We therefore caution
-against treating the LLM's stated confidence as a per-task
+against treating the agent's stated confidence as a per-task
 quality signal: it is effectively a constant under this prompt
 template. If confidence calibration matters for a downstream
 decision, the user should calibrate against realised speedup
@@ -1362,13 +1362,13 @@ empirically, not rely on the scalar in the JSON.
 \begin{figure}[ht]
   \centering
   \includegraphics[width=0.98\linewidth]{fig_4_15_llm_cache_reanalysis.png}
-  \caption{(a)--(b) Scatter of LLM self-reported confidence against
+  \caption{(a)--(b) Scatter of agent self-reported confidence against
     realised speedup and realised final-weight reduction; two of
     three benchmarks share the same confidence value so the
     $(x,y)$-relation is effectively undefined on this cache.
     (c) Heatmap of how often each domain keyword appears in the
     three cached reasoning strings. (d) Parity between the
-    LLM-suggested area for each 10-bar design variable and the
+    agent-suggested area for each 10-bar design variable and the
     median area that \num{10} GA seeds actually converge to.}
   \label{fig:llm_cache_reanalysis}
 \end{figure}
@@ -1380,16 +1380,16 @@ dominate all three reasoning strings in roughly equal proportion;
 ``buckling'' appears twice on 25-bar (which is primarily a
 stress-dominated problem in Imperial units, no buckling
 constraint in our encoding) and zero times on 10-bar (which has
-no buckling constraint either). That is, the LLM's vocabulary
+no buckling constraint either). That is, the agent's vocabulary
 tracks the \emph{structural} content of each benchmark rather
 than being template-filled, which is a weak but nonzero piece of
 evidence that the model is reasoning about load paths rather
 than reciting one generic design principle.
 
 \paragraph{The 10-bar suggestion is in the right shape.}
-Panel~(d) plots the LLM-suggested area for each of the \num{10}
+Panel~(d) plots the agent-suggested area for each of the \num{10}
 design variables against the median area that ten independent
-GA seeds actually converge to. The LLM's suggested areas span
+GA seeds actually converge to. The agent's suggested areas span
 the correct order of magnitude ($\num{0.5}$--$\num{30}$~in$^2$)
 and cluster around the $y=x$ line without ever being
 catastrophically wrong. The two largest suggested areas do
@@ -1544,7 +1544,7 @@ ablation of \cref{sec:results:ablation:constraints} makes the
 point numerically; \cref{fig:results:hard-vs-soft} makes it
 visually.
 
-\paragraph{LLM warm-start helps where the LLM can see a
+\paragraph{agent warm-start helps where the agent can see a
 structural insight.} The \num{36.8}\,\% reduction in
 generations-to-convergence on 10-bar (\num{40} seeds,
 $p = \num{0.0046}$) is driven by Claude correctly identifying
@@ -1555,10 +1555,10 @@ a plausible tapered tower section; on 72-bar, however, no
 comparable insight is available --- the tower has no redundant
 members in the strict sense, and a GA finds the binding
 constraint boundary in \num{50}-ish generations whether warm-
-started or not. The headline is not that LLMs help uniformly but
+started or not. The headline is not that agents help uniformly but
 that they help where a human expert would recognise a
 qualitative architectural insight. This matches Makatura et
-al.~\cite{makatura2024}'s framing of the LLM as a
+al.~\cite{makatura2024}'s framing of the agent as a
 \emph{co-designer} that offers structural suggestions rather
 than as a replacement for the optimiser.
 
@@ -1576,7 +1576,7 @@ latency fills a different niche --- real-time interactive
 exploration in the Streamlit UI. Taken together, the AI layers
 address two orthogonal bottlenecks in applied structural
 optimisation: the inner-loop evaluation cost (surrogate) and the
-cold-start latency of a fresh optimisation run (RL and LLM
+cold-start latency of a fresh optimisation run (RL and agent
 warm-start).
 
 \paragraph{Practical implications for Indian design offices.}
@@ -1587,7 +1587,7 @@ $\num{34}$-min-to-\num{17}-s reduction on 10-bar, combined with
 a Streamlit UI that a practitioner can drive without writing
 Python, is the smallest useful unit of deployment: a utility
 that an engineer can run during a design meeting and obtain a
-feasible optimum, plus a confidence-ranked LLM-suggested design
+feasible optimum, plus a confidence-ranked agent-suggested design
 to cross-check against intuition, before the meeting ends. The
 end-to-end demo on 10-bar meets this under-\num{10}-s target
 (see \cref{sec:method:ui}).
@@ -1650,7 +1650,7 @@ the hybrid adaptive-sampling pattern of
 active-learning surrogate refinement
 (\cref{sec:conclusion:future}).
 
-\paragraph{LLM model drift.} The LLM warm-start results use
+\paragraph{agent model drift.} The agent warm-start results use
 Claude Opus~4.7. As Anthropic releases successor models, the
 cached designs in \texttt{results/llm\_cache/} will remain
 reproducible but the numerical effect sizes may shift. The
